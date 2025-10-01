@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+title: "LLM Evaluation Harness with Guardrails"
+message: "If you use this project in your research, please cite it using the metadata below."
+type: software
+abstract: "A guardrailed evaluation harness for Retrieval-Augmented Generation systems with adversarial testing, TruLens/Ragas metrics, and automated reporting."
+authors:
+  - family-names: "Doe"
+    given-names: "Alex"
+  - family-names: "Smith"
+    given-names: "Jordan"
+identifiers:
+  - type: url
+    value: "https://github.com/your-org/llm-eval-guardrails"
+repository-code: "https://github.com/your-org/llm-eval-guardrails"
+license: "MIT"
+version: "0.1.0"
+date-released: "2024-07-01"

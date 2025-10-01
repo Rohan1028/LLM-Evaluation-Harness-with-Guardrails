@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: |
+          uv pip install -r requirements.txt
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run black --check src tests
+
+      - name: Type Check
+        run: uv run mypy src
+
+      - name: Tests
+        run: uv run pytest
+
+      - name: Smoke Evaluation
+        run: |
+          uv run python -m evalguard.cli ingest --corpus ./data/corpus --collection demo
+          uv run python -m evalguard.cli run --suite demo --models mock:deterministic --k 2 --out ./reports/ci_run
+          uv run python -m evalguard.cli report --input ./reports/ci_run/aggregate.json --html ./reports/index.html
+
+      - name: Regression Gate
+        run: uv run python -m evalguard.cli regress --current ./reports/ci_run/aggregate.json --baseline ./reports/baseline_metrics.json
+        continue-on-error: false

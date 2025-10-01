@@ -1,0 +1,12 @@
+{"question": "What is SentinelIQ and who is it for?", "ground_truth": "SentinelIQ is a unified intelligence platform designed for regulated industry teams such as security operations, product managers, and compliance analysts.", "metadata": {"doc_hint": "welcome"}}
+{"question": "List the main features shipping with SentinelIQ.", "ground_truth": "It provides hybrid retrieval, a policy-aware LLM orchestrator with citations and toxicity guardrails, and configurable pipelines.", "metadata": {"doc_hint": "product"}}
+{"question": "How must answers cite sources in SentinelIQ?", "ground_truth": "They must include bracketed citations referencing document chunks, e.g., [product:2].", "metadata": {"doc_hint": "product"}}
+{"question": "What roadmap items are mentioned?", "ground_truth": "Upcoming integrations with open source models via Ollama and enterprise deployments through Azure OpenAI.", "metadata": {"doc_hint": "product"}}
+{"question": "Which guardrails are built into SentinelIQ?", "ground_truth": "Citation enforcement and inline toxicity detection are built in.", "metadata": {"doc_hint": "product"}}
+{"question": "Describe SentinelIQ's mission statement.", "ground_truth": "Deliver actionable insights that teams can trust.", "metadata": {"doc_hint": "welcome"}}
+{"question": "Name three compliance or security controls enforced.", "ground_truth": "Role-based access controls, continuous monitoring for prompt injections, and inline toxicity detection.", "metadata": {"doc_hint": "security"}}
+{"question": "What can customers export for compliance evidence?", "ground_truth": "They can export guardrail audit logs.", "metadata": {"doc_hint": "security"}}
+{"question": "Which certifications or standards are referenced?", "ground_truth": "SOC 2 Type II validation and FedRAMP moderate alignment.", "metadata": {"doc_hint": "security"}}
+{"question": "How are retrieval contexts handled regarding PII?", "ground_truth": "Retrieval contexts are filtered for PII before indexing.", "metadata": {"doc_hint": "security"}}
+{"question": "What kind of logging does SentinelIQ maintain?", "ground_truth": "Full audit logs are kept for transparency and compliance.", "metadata": {"doc_hint": "welcome"}}
+{"question": "Which teams benefit from SentinelIQ's capabilities?", "ground_truth": "Security operations, product management, and compliance teams.", "metadata": {"doc_hint": "welcome"}}

@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Python tooling
+.mypy_cache/
+.pytest_cache/
+ruff_cache/
+.cache/
+
+# Data & reports
+.vectorstore/
+reports/*.html
+reports/*.json
+reports/*.csv
+reports/*.png
+reports/*.svg~
+reports/run_*/
+reports/adv_*/
+
+# Environment files
+.env
+*.env.local
+
+# Editor settings
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# pytest coverage
+htmlcov/
+.coverage*
+
+# Build
+dist/
+build/
+*.egg-info/
