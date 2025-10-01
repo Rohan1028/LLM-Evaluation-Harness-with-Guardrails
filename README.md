@@ -3,7 +3,7 @@
 ![Dashboard preview](reports/sample_dashboard.svg)
 
 ## Overview
-llm-eval-guardrails is a production-grade framework for building, guarding, and evaluating Retrieval-Augmented Generation (RAG) systems across multiple LLM providers. It ingests local corpora, enforces runtime guardrails (citations, toxicity, fact-check), orchestrates evaluations with TruLens & Ragas, and generates comprehensive regression-ready reports—ready to clone and run in minutes on Python 3.11.
+llm-eval-guardrails is a production-grade framework for building, guarding, and evaluating Retrieval-Augmented Generation (RAG) systems across multiple LLM providers. It ingests local corpora, enforces runtime guardrails (citations, toxicity, fact-check), orchestrates evaluations with TruLens & Ragas, and generates comprehensive regression-ready reports?ready to clone and run in minutes on Python 3.11.
 
 ### Key Features
 - Pluggable providers (OpenAI, Anthropic, Azure OpenAI, Ollama, Mock) selectable via CLI.
@@ -121,10 +121,10 @@ providers:
 Override any field by providing `--config path/to/config.yaml`; environment variables supply API keys (see `.env.sample`).
 
 ## Guardrails
-1. **Citation Enforcement** — Validates `[doc_id:chunk_id]` references against retrieved contexts with a minimum citation count.
-2. **Toxicity Filter** — Uses transformers pipeline when available, otherwise a fallback keyword heuristic, rejecting/redacting answers above threshold.
-3. **Fact-Check Loop** — Re-verifies using the model itself; one retry with corrective instructions if unfaithful.
-4. **Optional Guardrails.ai** — Applies a JSON schema rail for structured answers when `rail_spec_enabled` is true.
+1. **Citation Enforcement** ? Validates `[doc_id:chunk_id]` references against retrieved contexts with a minimum citation count.
+2. **Toxicity Filter** ? Uses transformers pipeline when available, otherwise a fallback keyword heuristic, rejecting/redacting answers above threshold.
+3. **Fact-Check Loop** ? Re-verifies using the model itself; one retry with corrective instructions if unfaithful.
+4. **Optional Guardrails.ai** ? Applies a JSON schema rail for structured answers when `rail_spec_enabled` is true.
 
 ## Evaluation
 - **TruLens heuristics** (faithfulness/coherence) via optional instrumentation; falls back to lexical heuristics when package unavailable.
@@ -163,3 +163,4 @@ See `CONTRIBUTING.md` for local development workflow, pre-commit usage, and comm
 5. `make regress` (after baseline update)
 
 Enjoy evaluating safely-guarded RAG pipelines!
+
