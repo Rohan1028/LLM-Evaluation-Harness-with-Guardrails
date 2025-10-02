@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated, Any, Callable, List, Optional, TypeVar
+from typing import Annotated, Any, Callable, List, Optional, Tuple, TypeVar
 
 import typer
 from dotenv import load_dotenv
@@ -84,10 +84,11 @@ def ingest(
 def run(
     suite: Annotated[str, typer.Option(help="QA suite name (e.g., demo)")] = "demo",
     models: Annotated[
-        Optional[List[str]],
-        typer.Option(None, "--model", "-m", "--models", help="Provider:model specifications"),
-    ] = None,
-    model_args: Annotated[tuple[str, ...], typer.Argument(())] = (),
+        Tuple[str, ...],
+        typer.Option(
+            "--model", "-m", "--models", help="Provider:model specifications", multiple=True
+        ),
+    ] = (),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     k: Annotated[Optional[int], typer.Option(help="Override retrieval top-k")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory for run artifacts")] = None,
@@ -95,7 +96,7 @@ def run(
     """Execute a QA evaluation suite with guardrails and metrics."""
     settings = _init_settings(config)
     top_k = k or settings.rag.retriever_top_k
-    selected_models = list(models or model_args or DEFAULT_QA_MODELS)
+    selected_models = list(models or DEFAULT_QA_MODELS)
     data_path = settings.data_dir / "qa" / f"{suite}_qa.jsonl"
     if not data_path.exists():
         data_path = settings.data_dir / "qa" / "demo_qa.jsonl"
@@ -141,10 +142,9 @@ def adversarial(
         str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")
     ] = "all",
     models: Annotated[
-        Optional[List[str]],
-        typer.Option(None, "--model", "-m", "--models", help="Provider:model spec"),
-    ] = None,
-    model_args: Annotated[tuple[str, ...], typer.Argument(())] = (),
+        Tuple[str, ...],
+        typer.Option("--model", "-m", "--models", help="Provider:model spec", multiple=True),
+    ] = (),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory")] = None,
 ) -> None:
@@ -153,7 +153,7 @@ def adversarial(
     suites = ["jailbreaks", "injections", "safety"] if suite == "all" else [suite]
     suite_paths = [settings.data_dir / "adversarial" / f"{name}.yaml" for name in suites]
     suite_paths = [path for path in suite_paths if path.exists()]
-    selected_models = list(models or model_args or DEFAULT_ADV_MODELS)
+    selected_models = list(models or DEFAULT_ADV_MODELS)
     if not suite_paths:
         raise FileNotFoundError("No adversarial suites found.")
 
