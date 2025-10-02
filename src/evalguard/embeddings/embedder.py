@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Iterable, List, Protocol, Sequence
+from typing import List, Protocol, Sequence
 
 import numpy as np
 
@@ -72,3 +72,4 @@ class SentenceTransformerEmbedder:
 
 def build_embedder(model_name: str = "all-MiniLM-L6-v2", prefer_fallback: bool = False) -> SentenceTransformerEmbedder:
     return SentenceTransformerEmbedder(model_name=model_name, use_fallback=prefer_fallback)
+

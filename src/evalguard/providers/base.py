@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -31,8 +30,7 @@ class Provider(ABC):
     ) -> str:
         raise NotImplementedError
 
-    def validate(self) -> None:
-        """Optional hook to validate provider credentials."""
+    def validate(self) -> None:\n        """Optional hook to validate provider credentials."""\n        return None
 
     @property
     def temperature(self) -> float:
@@ -129,3 +127,4 @@ class MockProvider(Provider):
 
     def validate(self) -> None:
         LOGGER.debug("MockProvider ready with deterministic outputs.")
+

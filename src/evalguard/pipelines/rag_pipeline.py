@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence
 
 from ..config import GuardrailConfig, RAGConfig, Settings
@@ -174,3 +174,4 @@ class RAGPipeline:
             prompt += f"- [{ctx.doc_id}:{ctx.chunk_id}] {ctx.text}\n"
         prompt += "\nAnswer:"
         return prompt
+

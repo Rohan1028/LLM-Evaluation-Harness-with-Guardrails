@@ -52,9 +52,11 @@ target-version = ["py311"]
 
 [tool.ruff]
 line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "B", "I", "N"]
 ignore = ["E203", "E501"]
-target-version = "py311"
 
 [tool.mypy]
 python_version = "3.11"
@@ -76,3 +78,5 @@ packages = ["src/evalguard"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/evalguard", "README.md", "LICENSE", "requirements.txt", "pyproject.toml", "data", "tests", ".github", "Makefile", "pre-commit-config.yaml"]
+
+

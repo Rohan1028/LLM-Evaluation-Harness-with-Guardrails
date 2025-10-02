@@ -1,7 +1,7 @@
 from evalguard.evaluation.ragas_runner import RagasRunner
 from evalguard.evaluation.trulens_runner import TruLensRunner
-from evalguard.pipelines import PipelineRunResult, PipelineMetadata
-from evalguard.pipelines.guardrails import GuardrailResult, Citation
+from evalguard.pipelines import PipelineMetadata, PipelineRunResult
+from evalguard.pipelines.guardrails import Citation, GuardrailResult
 from evalguard.pipelines.rag_pipeline import RetrievedContext
 
 
@@ -46,3 +46,4 @@ def test_trulens_runner() -> None:
     runner = TruLensRunner()
     report = runner.evaluate([build_result()])
     assert "faithfulness_mean" in report.aggregate
+

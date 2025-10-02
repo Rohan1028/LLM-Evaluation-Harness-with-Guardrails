@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import Dict, Tuple
 
+from . import anthropic_provider  # noqa: F401
+from . import azure_openai_provider  # noqa: F401
+from . import ollama_provider  # noqa: F401
+from . import openai_provider  # noqa: F401
 from ..config import ProviderConfig
 from .base import (
     PROVIDER_REGISTRY,
@@ -10,10 +14,6 @@ from .base import (
     create_provider,
     parse_provider_spec,
 )
-from . import openai_provider  # noqa: F401
-from . import anthropic_provider  # noqa: F401
-from . import azure_openai_provider  # noqa: F401
-from . import ollama_provider  # noqa: F401
 
 __all__ = [
     "Provider",

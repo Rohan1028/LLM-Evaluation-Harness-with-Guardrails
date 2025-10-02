@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import Iterable, Optional
 
 import httpx
@@ -48,3 +47,4 @@ class OllamaProvider(Provider):
             resp.raise_for_status()
         except Exception as exc:
             LOGGER.warning("Ollama ping failed: %s", exc)
+

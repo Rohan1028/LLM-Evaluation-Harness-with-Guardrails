@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from evalguard.config import Settings, load_settings
+from evalguard.config import load_settings
 
 
 def test_default_settings_loaded(tmp_path: Path) -> None:
@@ -12,3 +12,4 @@ def test_default_settings_loaded(tmp_path: Path) -> None:
     config_path.write_text("rag:\n  retriever_top_k: 2\n", encoding="utf-8")
     settings = load_settings(config_path)
     assert settings.rag.retriever_top_k == 2
+

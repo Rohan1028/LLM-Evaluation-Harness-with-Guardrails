@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Annotated, List, Optional
 
 import typer
 from dotenv import load_dotenv
@@ -19,8 +19,8 @@ from .evaluation.trulens_runner import TruLensRunner
 from .logging import configure_logging, get_logger
 from .pipelines import RAGPipeline
 from .providers import Provider, build_provider_from_spec
+from .utils import ensure_dir, load_jsonl
 from .vectorstore import ChromaVectorStore, ingest_corpus
-from .utils import load_jsonl, ensure_dir
 
 load_dotenv()
 app = typer.Typer(add_completion=False)
@@ -46,25 +46,31 @@ def _build_pipeline(provider: Provider, settings: Settings) -> RAGPipeline:
 
 @app.command()
 def ingest(
-    corpus: Path = typer.Option(Path("./data/corpus"), help="Path to corpus directory"),
-    collection: str = typer.Option("demo", help="Name of the Chroma collection"),
-    config: Optional[Path] = typer.Option(None, help="Path to configuration YAML"),
+    corpus: Annotated[Path, typer.Option(help="Path to corpus directory")] = Path("./data/corpus"),
+    collection: Annotated[str, typer.Option(help="Name of the Chroma collection")] = "demo",
+    config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
 ) -> None:
     """Embed and ingest a corpus into the vector store."""
     settings = _init_settings(config)
     embedder = build_embedder(prefer_fallback=False)
     vector_store = ChromaVectorStore(collection_name=collection, persist_directory=str(settings.persist_dir))
-    stats = ingest_corpus(corpus_dir=corpus, collection_name=collection, embedder=embedder, vector_store=vector_store, rag_config=settings.rag)
+    stats = ingest_corpus(
+        corpus_dir=corpus,
+        collection_name=collection,
+        embedder=embedder,
+        vector_store=vector_store,
+        rag_config=settings.rag,
+    )
     rprint(f"[green]Ingestion complete[/green]: {stats.documents} docs -> {stats.chunks} chunks")
 
 
 @app.command()
 def run(
-    suite: str = typer.Option("demo", help="QA suite name (e.g., demo)"),
-    models: List[str] = typer.Argument(["mock:deterministic"], help="Provider:model specifications"),
-    config: Optional[Path] = typer.Option(None, help="Path to configuration YAML"),
-    k: int = typer.Option(None, help="Override retrieval top-k"),
-    out: Optional[Path] = typer.Option(None, help="Output directory for run artifacts"),
+    suite: Annotated[str, typer.Option(help="QA suite name (e.g., demo)")] = "demo",
+    models: Annotated[List[str], typer.Argument(help="Provider:model specifications")] = ["mock:deterministic"],
+    config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
+    k: Annotated[Optional[int], typer.Option(help="Override retrieval top-k")] = None,
+    out: Annotated[Optional[Path], typer.Option(help="Output directory for run artifacts")] = None,
 ) -> None:
     """Execute a QA evaluation suite with guardrails and metrics."""
     settings = _init_settings(config)
@@ -106,10 +112,10 @@ def run(
 
 @app.command()
 def adversarial(
-    suite: str = typer.Option("all", help="Suite name (jailbreaks|injections|safety|all)"),
-    models: List[str] = typer.Argument(["mock:deterministic"], help="Provider:model spec"),
-    config: Optional[Path] = typer.Option(None, help="Path to configuration YAML"),
-    out: Optional[Path] = typer.Option(None, help="Output directory"),
+    suite: Annotated[str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")] = "all",
+    models: Annotated[List[str], typer.Argument(help="Provider:model spec")] = ["mock:deterministic"],
+    config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
+    out: Annotated[Optional[Path], typer.Option(help="Output directory")] = None,
 ) -> None:
     """Run adversarial prompt suites against providers."""
     settings = _init_settings(config)
@@ -122,9 +128,10 @@ def adversarial(
     results = []
     for spec in models:
         name, provider = build_provider_from_spec(spec, settings.providers)
+        provider_instance = provider
 
-        def factory() -> RAGPipeline:
-            return _build_pipeline(provider, settings)
+        def factory(provider_ref: Provider = provider_instance) -> RAGPipeline:
+            return _build_pipeline(provider_ref, settings)
 
         run_results = run_adversarial_suite(suite_paths, factory)
         results.extend(run_results)
@@ -139,33 +146,38 @@ def adversarial(
 
 @app.command()
 def report(
-    input: Path = typer.Option(..., help="Path to aggregate JSON"),
-    html: Path = typer.Option(..., help="Output HTML path"),
-    per_example: Optional[Path] = typer.Option(None, help="Per-example JSON path"),
-    adversarial: Optional[Path] = typer.Option(None, help="Adversarial JSON path"),
+    input_path: Annotated[Path, typer.Option(..., help="Path to aggregate JSON")],
+    html_path: Annotated[Path, typer.Option(..., help="Output HTML path")],
+    per_example: Annotated[Optional[Path], typer.Option(help="Per-example JSON path")] = None,
+    adversarial: Annotated[Optional[Path], typer.Option(help="Adversarial JSON path")] = None,
 ) -> None:
     """Render HTML dashboard from stored artifacts."""
-    per_example_path = per_example or input.parent / "per_example.json"
-    adversarial_path = adversarial or input.parent / "adversarial.json"
+    per_example_path = per_example or input_path.parent / "per_example.json"
+    adversarial_path = adversarial or input_path.parent / "adversarial.json"
     generate_html_report(
-        aggregate_path=input,
+        aggregate_path=input_path,
         per_example_path=per_example_path,
         adversarial_path=adversarial_path if adversarial_path.exists() else None,
-        output_html=html,
+        output_html=html_path,
     )
-    rprint(f"[green]Report generated[/green] -> {html}")
+    rprint(f"[green]Report generated[/green] -> {html_path}")
 
 
 @app.command()
 def regress(
-    current: Path = typer.Option(..., help="Current aggregate JSON"),
-    baseline: Path = typer.Option(..., help="Baseline aggregate JSON"),
-    config: Optional[Path] = typer.Option(None, help="Path to configuration YAML"),
-    update_baseline: bool = typer.Option(False, help="Update baseline with current metrics"),
+    current: Annotated[Path, typer.Option(..., help="Current aggregate JSON")],
+    baseline: Annotated[Path, typer.Option(..., help="Baseline aggregate JSON")],
+    config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
+    update_baseline: Annotated[bool, typer.Option(help="Update baseline with current metrics")] = False,
 ) -> None:
     """Compare current metrics to baseline thresholds and fail on regression."""
     settings = _init_settings(config)
-    ok = compare_metrics(current_path=current, baseline_path=baseline, policies=settings.policies.to_dict(), update_baseline=update_baseline)
+    ok = compare_metrics(
+        current_path=current,
+        baseline_path=baseline,
+        policies=settings.policies.to_dict(),
+        update_baseline=update_baseline,
+    )
     if not ok:
         raise typer.Exit(code=1)
     rprint("[green]Regression check passed[/green]")
@@ -173,3 +185,4 @@ def regress(
 
 if __name__ == "__main__":
     app()
+

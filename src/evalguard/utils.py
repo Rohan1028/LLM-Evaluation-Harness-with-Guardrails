@@ -3,12 +3,11 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import os
 import random
 import string
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Dict, Iterator, List, Optional, Sequence, TypeVar
 
 import yaml
 
@@ -83,7 +82,7 @@ def optional_import(module_name: str) -> Any:
 
 
 def cosine_similarity(vec_a: Sequence[float], vec_b: Sequence[float]) -> float:
-    dot = sum(a * b for a, b in zip(vec_a, vec_b))
+    dot = sum(a * b for a, b in zip(vec_a, vec_b, strict=False))
     norm_a = math.sqrt(sum(a * a for a in vec_a)) or 1.0
     norm_b = math.sqrt(sum(b * b for b in vec_b)) or 1.0
     return dot / (norm_a * norm_b)
@@ -102,3 +101,4 @@ def slugify(value: str, sep: str = "-") -> str:
     while sep * 2 in cleaned:
         cleaned = cleaned.replace(sep * 2, sep)
     return cleaned.strip(sep).lower()
+

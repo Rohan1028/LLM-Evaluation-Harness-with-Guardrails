@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List
+from typing import List
 
 from tqdm import tqdm
 
@@ -83,3 +83,4 @@ def ingest_corpus(
     stats = IngestStats(documents=len(documents), chunks=len(chunk_records))
     LOGGER.info("Ingested %d documents into collection '%s'", stats.documents, collection_name)
     return stats
+

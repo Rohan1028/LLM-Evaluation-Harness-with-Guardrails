@@ -8,7 +8,7 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 from ..config import GuardrailConfig
 from ..logging import get_logger
 from ..providers.base import Provider
-from ..utils import normalize_text, optional_import
+from ..utils import optional_import
 
 LOGGER = get_logger(__name__)
 
@@ -206,3 +206,4 @@ def extract_citations(text: str) -> List[Citation]:
 def validate_citations(citations: Iterable[Citation], contexts: Sequence[dict]) -> bool:
     mapped = {(ctx["doc_id"], ctx["chunk_id"]) for ctx in contexts}
     return all((citation.doc_id, citation.chunk_id) in mapped for citation in citations)
+

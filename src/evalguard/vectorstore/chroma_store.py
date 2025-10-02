@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Protocol, Sequence
+from typing import Any, Dict, List, Protocol, Sequence
 
 import numpy as np
 
@@ -45,7 +45,7 @@ class _InMemoryVectorStore:
         metadatas: Sequence[Dict[str, Any]],
         documents: Sequence[str],
     ) -> None:
-        for idx, emb, meta, doc in zip(ids, embeddings, metadatas, documents):
+        for idx, emb, meta, doc in zip(ids, embeddings, metadatas, documents, strict=False):
             self._entries.append(
                 {"id": idx, "embedding": np.array(emb, dtype=np.float32), "metadata": meta, "document": doc}
             )
@@ -123,7 +123,7 @@ class ChromaVectorStore:
         metadatas = result.get("metadatas", [[]])[0]
         scores = result.get("distances", [[]])[0]
         chunks: List[DocumentChunk] = []
-        for doc, meta, score in zip(documents, metadatas, scores):
+        for doc, meta, score in zip(documents, metadatas, scores, strict=False):
             chunks.append(
                 DocumentChunk(
                     doc_id=meta.get("doc_id", meta.get("source", "unknown")),
@@ -134,3 +134,4 @@ class ChromaVectorStore:
                 )
             )
         return chunks
+
