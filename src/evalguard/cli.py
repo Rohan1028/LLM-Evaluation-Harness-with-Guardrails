@@ -83,7 +83,10 @@ def ingest(
 @typer_command()
 def run(
     suite: Annotated[str, typer.Option(help="QA suite name (e.g., demo)")] = "demo",
-    models: Annotated[Optional[List[str]], typer.Option("--model", "-m", help="Provider:model specifications")] = None,
+    models: Annotated[
+        Optional[List[str]],
+        typer.Option("--model", "-m", "--models", help="Provider:model specifications"),
+    ] = None,
     model_args: Annotated[tuple[str, ...], typer.Argument()] = (),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     k: Annotated[Optional[int], typer.Option(help="Override retrieval top-k")] = None,
@@ -138,7 +141,7 @@ def adversarial(
         str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")
     ] = "all",
     models: Annotated[
-        Optional[List[str]], typer.Option("--model", "-m", help="Provider:model spec")
+        Optional[List[str]], typer.Option("--model", "-m", "--models", help="Provider:model spec")
     ] = None,
     model_args: Annotated[tuple[str, ...], typer.Argument()] = (),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
