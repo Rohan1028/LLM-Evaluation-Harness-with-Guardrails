@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated, Any, Callable, List, Optional, Tuple, TypeVar
+from typing import Annotated, Any, Callable, List, Optional, Sequence, TypeVar
 
 import typer
 from dotenv import load_dotenv
@@ -81,7 +81,7 @@ def ingest(
 @typer_command()
 def run(
     suite: Annotated[str, typer.Option(help="QA suite name (e.g., demo)")] = "demo",
-    models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model specifications")] = (
+    models: Annotated[Sequence[str], typer.Argument(help="Provider:model specifications")] = (
         "mock:deterministic",
     ),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
@@ -135,7 +135,7 @@ def adversarial(
     suite: Annotated[
         str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")
     ] = "all",
-    models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model spec")] = (
+    models: Annotated[Sequence[str], typer.Argument(help="Provider:model spec")] = (
         "mock:deterministic",
     ),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
