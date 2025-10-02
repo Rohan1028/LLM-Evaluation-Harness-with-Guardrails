@@ -15,17 +15,17 @@ llm-eval-guardrails is a production-grade framework for building, guarding, and 
 
 ## Architecture
 ```mermaid
-flowchart TD
+graph TD
     A[Corpus Files] -->|Ingest| B[Chroma Vector Store]
     B --> C[Retriever]
     C --> D[Prompt Builder]
     D --> E[Provider Abstraction]
     E --> F[Guardrail Runner]
-    F -->|Pass| G[Answer + Metadata]
-    F -->|Retry| D
-    G --> H[Evals (TruLens, Ragas, Safety)]
+    F -- Pass --> G[Answer & Metadata]
+    F -- Retry --> D
+    G --> H["Evals (TruLens, Ragas, Safety)"]
     H --> I[Reporting Engine]
-    I --> J[Reports JSON/CSV/HTML]
+    I --> J["Reports JSON/CSV/HTML"]
     K[Adversarial Suites] --> E
     L[Regression Baselines] --> H
 ```
