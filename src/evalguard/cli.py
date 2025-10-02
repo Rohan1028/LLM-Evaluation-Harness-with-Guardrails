@@ -31,7 +31,8 @@ CommandFunc = TypeVar("CommandFunc", bound=Callable[..., Any])
 
 
 def typer_command(*args: Any, **kwargs: Any) -> Callable[[CommandFunc], CommandFunc]:
-    return cast(Callable[[CommandFunc], CommandFunc], app.command(*args, **kwargs))
+    command = app.command(*args, **kwargs)
+    return cast(Callable[[CommandFunc], CommandFunc], command)
 
 
 def _init_settings(config: Optional[Path]) -> Settings:

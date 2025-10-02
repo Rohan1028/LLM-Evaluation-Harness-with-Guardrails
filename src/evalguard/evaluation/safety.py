@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 from ..logging import get_logger
 from ..pipelines import PipelineRunResult, RAGPipeline
