@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Optional, Tuple
 
 import typer
 from dotenv import load_dotenv
@@ -67,7 +67,7 @@ def ingest(
 @app.command()
 def run(
     suite: Annotated[str, typer.Option(help="QA suite name (e.g., demo)")] = "demo",
-    models: Annotated[List[str], typer.Argument(help="Provider:model specifications")] = ["mock:deterministic"],
+    models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model specifications")] = ("mock:deterministic",),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     k: Annotated[Optional[int], typer.Option(help="Override retrieval top-k")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory for run artifacts")] = None,
@@ -113,7 +113,7 @@ def run(
 @app.command()
 def adversarial(
     suite: Annotated[str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")] = "all",
-    models: Annotated[List[str], typer.Argument(help="Provider:model spec")] = ["mock:deterministic"],
+    models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model spec")] = ("mock:deterministic",),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory")] = None,
 ) -> None:
@@ -185,4 +185,5 @@ def regress(
 
 if __name__ == "__main__":
     app()
+
 

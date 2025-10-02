@@ -30,7 +30,9 @@ class Provider(ABC):
     ) -> str:
         raise NotImplementedError
 
-    def validate(self) -> None:\n        """Optional hook to validate provider credentials."""\n        return None
+    def validate(self) -> None:
+        """Optional hook to validate provider credentials."""
+        return None
 
     @property
     def temperature(self) -> float:
@@ -127,4 +129,5 @@ class MockProvider(Provider):
 
     def validate(self) -> None:
         LOGGER.debug("MockProvider ready with deterministic outputs.")
+
 

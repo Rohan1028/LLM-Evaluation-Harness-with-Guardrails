@@ -7,7 +7,6 @@ from typing import Any, Dict, Optional
 import yaml
 from pydantic import BaseModel, Field, model_validator
 
-
 DEFAULT_CONFIG_NAME = "config.yaml"
 
 
