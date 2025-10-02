@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, cast
 
 from ..config import GuardrailConfig
 from ..logging import get_logger
@@ -13,6 +13,8 @@ from ..utils import optional_import
 LOGGER = get_logger(__name__)
 
 CITATION_PATTERN = re.compile(r"\[(?P<doc>[^:\]]+):(?P<chunk>\d+)\]")
+
+_ToxicityPipeline = Callable[[str], Sequence[Mapping[str, Any]]]
 
 
 @dataclass
@@ -41,13 +43,13 @@ class GuardrailResult:
 class GuardrailRunner:
     def __init__(self, config: GuardrailConfig) -> None:
         self.config = config
-        self._toxicity_pipeline = self._load_toxicity_pipeline()
-        self._guardrails = self._load_guardrails_spec()
+        self._toxicity_pipeline: Optional[_ToxicityPipeline] = self._load_toxicity_pipeline()
+        self._guardrails: Optional[Any] = self._load_guardrails_spec()
 
     def enforce(
         self,
         answer: str,
-        contexts: Sequence[dict],
+        contexts: Sequence[Mapping[str, Any]],
         question: str,
         provider: Provider,
     ) -> GuardrailResult:
@@ -76,7 +78,7 @@ class GuardrailRunner:
         if self._guardrails:
             try:
                 answer = self._guardrails_parse(answer)
-            except Exception as exc:
+            except Exception as exc:  # pragma: no cover - optional
                 LOGGER.debug("Guardrails.ai parse failed: %s", exc)
 
         return GuardrailResult(
@@ -93,9 +95,9 @@ class GuardrailRunner:
             return 0.0
         if self._toxicity_pipeline:
             try:
-                outputs = self._toxicity_pipeline(text)  # type: ignore[operator]
-                if isinstance(outputs, list) and outputs:
-                    score = outputs[0]["score"]
+                outputs = self._toxicity_pipeline(text)
+                if outputs:
+                    score = outputs[0].get("score", 0.0)
                     return float(score)
             except Exception as exc:  # pragma: no cover - optional
                 LOGGER.debug("Toxicity pipeline failed: %s", exc)
@@ -107,7 +109,7 @@ class GuardrailRunner:
         self,
         question: str,
         answer: str,
-        contexts: Sequence[dict],
+        contexts: Sequence[Mapping[str, Any]],
         provider: Provider,
     ) -> bool:
         prompt = (
@@ -127,7 +129,7 @@ class GuardrailRunner:
             LOGGER.debug("Fact-check call failed: %s", exc)
             return True
 
-    def _build_retry_prompt(self, question: str, contexts: Sequence[dict]) -> str:
+    def _build_retry_prompt(self, question: str, contexts: Sequence[Mapping[str, Any]]) -> str:
         prompt = (
             "The previous answer may contain unsupported information. "
             "Review the contexts and produce a corrected answer citing specific chunks.\n"
@@ -138,26 +140,26 @@ class GuardrailRunner:
         prompt += "Provide an updated answer with bracketed citations."
         return prompt
 
-    def _load_toxicity_pipeline(self):
+    def _load_toxicity_pipeline(self) -> Optional[_ToxicityPipeline]:
         transformers = optional_import("transformers")
         if not transformers:  # pragma: no cover - optional dependency
             return None
         try:
             pipeline = transformers.pipeline("text-classification", model="unitary/toxic-bert")
             LOGGER.info("Loaded transformers toxicity pipeline")
-            return pipeline
+            return cast(_ToxicityPipeline, pipeline)
         except Exception as exc:  # pragma: no cover - heavy dependency
             LOGGER.warning("Failed to load toxicity model: %s", exc)
             return None
 
-    def _load_guardrails_spec(self):
+    def _load_guardrails_spec(self) -> Optional[Any]:
         if not self.config.rail_spec_enabled:
             return None
-        guardrails = optional_import("guardrails")
-        if not guardrails:  # pragma: no cover - optional
+        guardrails_module = optional_import("guardrails")
+        if not guardrails_module:  # pragma: no cover - optional
             LOGGER.warning("guardrails-ai package not installed; skipping schema enforcement")
             return None
-        schema = {
+        schema: Mapping[str, Any] = {
             "rail_spec": {
                 "type": "object",
                 "properties": {
@@ -179,20 +181,21 @@ class GuardrailRunner:
         if self.config.rail_spec_path and self.config.rail_spec_path.exists():
             try:
                 schema = json.loads(self.config.rail_spec_path.read_text())
-            except Exception as exc:  # pragma: no cover
+            except Exception as exc:  # pragma: no cover - file parsing
                 LOGGER.warning("Failed to load rail spec: %s", exc)
-        from guardrails import Guard  # type: ignore
-
-        guard = Guard.from_pydantic(output_class=dict, prompt=None, spec=schema)
-        return guard
+        guard_cls = getattr(guardrails_module, "Guard", None)
+        if guard_cls is None:  # pragma: no cover - optional
+            LOGGER.warning("Guard class missing from guardrails module")
+            return None
+        return guard_cls.from_pydantic(output_class=dict, prompt=None, spec=schema)
 
     def _guardrails_parse(self, answer: str) -> str:
         guard = self._guardrails
         if not guard:
             return answer
-        parsed = guard.parse(answer)  # type: ignore[call-arg]
+        parsed = guard.parse(answer)
         if isinstance(parsed, dict) and "answer" in parsed:
-            return parsed["answer"]
+            return cast(str, parsed["answer"])
         return answer
 
 
@@ -203,6 +206,9 @@ def extract_citations(text: str) -> List[Citation]:
     return citations
 
 
-def validate_citations(citations: Iterable[Citation], contexts: Sequence[dict]) -> bool:
+def validate_citations(
+    citations: Iterable[Citation],
+    contexts: Sequence[Mapping[str, Any]],
+) -> bool:
     mapped = {(ctx["doc_id"], ctx["chunk_id"]) for ctx in contexts}
     return all((citation.doc_id, citation.chunk_id) in mapped for citation in citations)

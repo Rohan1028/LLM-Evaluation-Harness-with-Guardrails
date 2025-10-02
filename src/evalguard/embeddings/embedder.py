@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import List, Protocol, Sequence
+from typing import Any, Callable, List, Protocol, Sequence, cast
 
 import numpy as np
 
@@ -29,8 +29,9 @@ class _FallbackEmbedder:
             token_hash = int(hashlib.md5(token.encode()).hexdigest(), 16)
             idx = token_hash % self.dim
             vec[idx] += 1.0
-        norm = np.linalg.norm(vec) or 1.0
-        return (vec / norm).tolist()
+        norm_fn = cast(Callable[[Any], float], np.linalg.norm)
+        norm = norm_fn(vec) or 1.0
+        return cast(List[float], (vec / norm).tolist())
 
     def embed_documents(self, texts: Sequence[str]) -> List[List[float]]:
         return [self.embed(text) for text in texts]
@@ -44,28 +45,28 @@ class SentenceTransformerEmbedder:
         self.model_name = model_name
         self._use_fallback = use_fallback
         self._fallback = _FallbackEmbedder()
-        self._model = None
+        self._model: Any = None
         if not use_fallback:
             try:
-                from sentence_transformers import SentenceTransformer  # type: ignore
+                from sentence_transformers import SentenceTransformer
 
                 self._model = SentenceTransformer(model_name)
                 LOGGER.info("Loaded sentence-transformer model '%s'", model_name)
-            except Exception as exc:
+            except Exception as exc:  # pragma: no cover - optional
                 LOGGER.warning("Falling back to hashing embedder: %s", exc)
                 self._use_fallback = True
 
     def embed_documents(self, texts: Sequence[str]) -> List[List[float]]:
         if self._use_fallback or self._model is None:
             return self._fallback.embed_documents(texts)
-        embeddings = self._model.encode(list(texts), normalize_embeddings=True)  # type: ignore
-        return embeddings.tolist()
+        embeddings = self._model.encode(list(texts), normalize_embeddings=True)
+        return cast(List[List[float]], embeddings.tolist())
 
     def embed_query(self, text: str) -> List[float]:
         if self._use_fallback or self._model is None:
             return self._fallback.embed_query(text)
-        embedding = self._model.encode(text, normalize_embeddings=True)  # type: ignore
-        return embedding.tolist()
+        embedding = self._model.encode(text, normalize_embeddings=True)
+        return cast(List[float], embedding.tolist())
 
 
 def build_embedder(

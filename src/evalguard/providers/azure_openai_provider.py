@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
-from typing import Iterable, Optional
+import importlib
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, cast
 
 from ..config import ProviderConfig
 from ..logging import get_logger
@@ -9,20 +9,28 @@ from .base import Provider, ProviderError, register_provider
 
 LOGGER = get_logger(__name__)
 
+if TYPE_CHECKING:
+    from openai import AzureOpenAI as AzureOpenAIClient
+else:
+    AzureOpenAIClient = Any
+
 
 @register_provider("azure-openai")
 class AzureOpenAIProvider(Provider):
     def __init__(self, config: ProviderConfig) -> None:
         super().__init__(config)
         try:
-            from openai import AzureOpenAI  # type: ignore
+            module = importlib.import_module("openai")
         except ImportError as exc:  # pragma: no cover - optional
             raise ProviderError("openai>=1.0.0 is required for Azure OpenAI") from exc
-        api_key = config.metadata.get("api_key") or os.environ.get("AZURE_OPENAI_API_KEY")
-        endpoint = config.metadata.get("endpoint") or os.environ.get("AZURE_OPENAI_ENDPOINT")
+        if not hasattr(module, "AzureOpenAI"):
+            raise ProviderError("openai>=1.0.0 is required for Azure OpenAI")
+        azure_cls = module.AzureOpenAI
+        api_key = config.metadata.get("api_key") or None
+        endpoint = config.metadata.get("endpoint") or None
         if not endpoint:
             raise ProviderError("Azure OpenAI endpoint missing (AZURE_OPENAI_ENDPOINT)")
-        self._client = AzureOpenAI(api_key=api_key, azure_endpoint=endpoint)
+        self._client = cast(AzureOpenAIClient, azure_cls(api_key=api_key, azure_endpoint=endpoint))
         self._deployment = config.metadata.get("deployment_name", config.model)
 
     def generate(
@@ -32,7 +40,11 @@ class AzureOpenAIProvider(Provider):
         stop: Optional[Iterable[str]] = None,
     ) -> str:
         try:
-            response = self._client.responses.create(  # type: ignore[attr-defined]
+            if not hasattr(self._client, "responses"):
+                raise ProviderError("Responses interface unavailable for Azure OpenAI client")
+            responses = self._client.responses
+            create = cast(Callable[..., Any], responses.create)
+            response: Any = create(
                 model=self._deployment,
                 input=prompt,
                 system=system or "",
@@ -40,7 +52,9 @@ class AzureOpenAIProvider(Provider):
                 max_output_tokens=self.config.max_tokens,
                 stop=stop,
             )
-            return getattr(response, "output_text", "")
+            if hasattr(response, "output_text"):
+                return cast(str, response.output_text)
+            return ""
         except Exception as exc:  # pragma: no cover - network
             raise ProviderError(f"Azure OpenAI generate failed: {exc}") from exc
 

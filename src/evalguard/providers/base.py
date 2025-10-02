@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Callable, Dict, Iterable, Optional, Tuple, TypeVar
 
 from ..config import ProviderConfig
 from ..logging import get_logger
@@ -46,11 +46,12 @@ class Provider(ABC):
         return f"{self.__class__.__name__}(model={self.config.model})"
 
 
+ProviderType = TypeVar("ProviderType", bound="Provider")
 PROVIDER_REGISTRY: Dict[str, type[Provider]] = {}
 
 
-def register_provider(name: str):
-    def decorator(cls: type[Provider]) -> type[Provider]:
+def register_provider(name: str) -> Callable[[type[ProviderType]], type[ProviderType]]:
+    def decorator(cls: type[ProviderType]) -> type[ProviderType]:
         PROVIDER_REGISTRY[name] = cls
         cls.name = name
         return cls

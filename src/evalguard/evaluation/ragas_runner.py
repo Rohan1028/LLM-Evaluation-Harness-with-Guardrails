@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import importlib
 import statistics
-from typing import Dict, List
+from typing import Any, Dict, List, TypedDict, cast
 
 from ..logging import get_logger
 from ..pipelines import PipelineRunResult
@@ -11,21 +12,28 @@ from . import EvaluationReport
 LOGGER = get_logger(__name__)
 
 
+class RagasExample(TypedDict):
+    question: str
+    model: str
+    answer_relevancy: float
+    faithfulness: float
+    context_precision: float
+    context_recall: float
+
+
 class RagasRunner:
     """Compute RAG-specific metrics with graceful fallback if ragas is unavailable."""
 
     def __init__(self) -> None:
-        self._ragas = None
+        self._ragas: Any = None
         try:
-            import ragas  # type: ignore
-
-            self._ragas = ragas
+            self._ragas = importlib.import_module("ragas")
             LOGGER.info("Ragas available; advanced metrics enabled")
         except Exception as exc:  # pragma: no cover - optional
             LOGGER.debug("Ragas not available: %s. Using heuristic evaluator.", exc)
 
     def evaluate(self, results: List[PipelineRunResult]) -> EvaluationReport:
-        per_example: List[Dict[str, float]] = []
+        per_example: List[RagasExample] = []
         for result in results:
             relevancy = self._answer_relevancy(result)
             faithfulness = self._faithfulness(result)
@@ -51,7 +59,11 @@ class RagasRunner:
             ),
             "context_recall_mean": statistics.fmean(item["context_recall"] for item in per_example),
         }
-        return EvaluationReport(name="ragas", per_example=per_example, aggregate=aggregate)
+        return EvaluationReport(
+            name="ragas",
+            per_example=cast(List[Dict[str, Any]], per_example),
+            aggregate=aggregate,
+        )
 
     def _answer_relevancy(self, result: PipelineRunResult) -> float:
         if not result.ground_truth:

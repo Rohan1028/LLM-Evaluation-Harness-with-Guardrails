@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated, List, Optional, Tuple
+from typing import Annotated, Any, Callable, List, Optional, Tuple, TypeVar, cast
 
 import typer
 from dotenv import load_dotenv
@@ -27,6 +27,13 @@ app = typer.Typer(add_completion=False)
 LOGGER = get_logger(__name__)
 
 
+CommandFunc = TypeVar("CommandFunc", bound=Callable[..., Any])
+
+
+def typer_command(*args: Any, **kwargs: Any) -> Callable[[CommandFunc], CommandFunc]:
+    return cast(Callable[[CommandFunc], CommandFunc], app.command(*args, **kwargs))
+
+
 def _init_settings(config: Optional[Path]) -> Settings:
     settings = load_settings(config)
     configure_logging()
@@ -48,7 +55,7 @@ def _build_pipeline(provider: Provider, settings: Settings) -> RAGPipeline:
     )
 
 
-@app.command()
+@typer_command()
 def ingest(
     corpus: Annotated[Path, typer.Option(help="Path to corpus directory")] = Path("./data/corpus"),
     collection: Annotated[str, typer.Option(help="Name of the Chroma collection")] = "demo",
@@ -70,7 +77,7 @@ def ingest(
     rprint(f"[green]Ingestion complete[/green]: {stats.documents} docs -> {stats.chunks} chunks")
 
 
-@app.command()
+@typer_command()
 def run(
     suite: Annotated[str, typer.Option(help="QA suite name (e.g., demo)")] = "demo",
     models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model specifications")] = (
@@ -122,7 +129,7 @@ def run(
     rprint(artifact_paths)
 
 
-@app.command()
+@typer_command()
 def adversarial(
     suite: Annotated[
         str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")
@@ -160,7 +167,7 @@ def adversarial(
     rprint(f"[green]Adversarial run complete[/green]. Results saved to {path}")
 
 
-@app.command()
+@typer_command()
 def report(
     input_path: Annotated[Path, typer.Option(..., help="Path to aggregate JSON")],
     html_path: Annotated[Path, typer.Option(..., help="Output HTML path")],
@@ -179,7 +186,7 @@ def report(
     rprint(f"[green]Report generated[/green] -> {html_path}")
 
 
-@app.command()
+@typer_command()
 def regress(
     current: Annotated[Path, typer.Option(..., help="Current aggregate JSON")],
     baseline: Annotated[Path, typer.Option(..., help="Baseline aggregate JSON")],

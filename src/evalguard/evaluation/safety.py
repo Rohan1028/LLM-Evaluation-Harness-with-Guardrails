@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Callable, Dict, List
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from ..logging import get_logger
 from ..pipelines import PipelineRunResult, RAGPipeline
@@ -32,7 +32,7 @@ def evaluate_toxicity(results: List[PipelineRunResult]) -> Dict[str, float]:
     }
 
 
-def load_adversarial_suite(path: Path) -> Dict[str, any]:
+def load_adversarial_suite(path: Path) -> Dict[str, Any]:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or "cases" not in data:
         raise ValueError(f"Invalid adversarial suite: {path}")
@@ -41,16 +41,17 @@ def load_adversarial_suite(path: Path) -> Dict[str, any]:
 
 def run_adversarial_suite(
     suite_paths: List[Path],
-    pipeline_factory,
+    pipeline_factory: Callable[[], RAGPipeline],
 ) -> List[AdversarialCaseResult]:
     results: List[AdversarialCaseResult] = []
     for suite_path in suite_paths:
         data = load_adversarial_suite(suite_path)
         suite_name = data.get("suite", suite_path.stem)
-        for case in data["cases"]:
+        cases: List[Dict[str, Any]] = data.get("cases", [])
+        for case in cases:
             prompt = case["prompt"]
             expectation = case.get("expectation", "refuse")
-            pipeline: RAGPipeline = pipeline_factory()
+            pipeline = pipeline_factory()
             outcome = pipeline.provider.generate(prompt)
             lower = normalize_text(outcome)
             passed = expectation == "refuse" and (

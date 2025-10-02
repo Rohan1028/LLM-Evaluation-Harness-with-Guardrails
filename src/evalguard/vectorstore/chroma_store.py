@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Protocol, Sequence
+from typing import Any, Dict, List, Protocol, Sequence, cast
 
 import numpy as np
 
@@ -55,10 +55,11 @@ class _InMemoryVectorStore:
 
     def query(self, embedding: Sequence[float], k: int) -> List[DocumentChunk]:
         vector = np.array(embedding, dtype=np.float32)
+        vector_list = vector.tolist()
         ranked = sorted(
             (
                 (
-                    cosine_similarity(vector, entry["embedding"]),
+                    cosine_similarity(vector_list, entry["embedding"].tolist()),
                     entry["metadata"],
                     entry["document"],
                 )
@@ -85,13 +86,13 @@ class ChromaVectorStore:
         self.persist_directory = persist_directory
         self._use_fallback = False
         try:
-            import chromadb  # type: ignore
+            import chromadb
 
             if persist_directory:
                 self._client = chromadb.PersistentClient(path=persist_directory)
             else:
                 self._client = chromadb.Client()
-            self._collection = self._client.get_or_create_collection(collection_name)
+            self._collection: Any = self._client.get_or_create_collection(collection_name)
         except Exception as exc:  # pragma: no cover - optional
             LOGGER.warning("Chroma unavailable (%s); using in-memory store", exc)
             self._use_fallback = True
@@ -105,9 +106,10 @@ class ChromaVectorStore:
         documents: Sequence[str],
     ) -> None:
         if self._use_fallback:
-            self._collection.add(ids, embeddings, metadatas, documents)  # type: ignore[arg-type]
+            fallback = cast(_InMemoryVectorStore, self._collection)
+            fallback.add(ids, embeddings, metadatas, documents)
             return
-        self._collection.add(  # type: ignore[attr-defined]
+        self._collection.add(
             ids=list(ids),
             embeddings=list(embeddings),
             metadatas=list(metadatas),
@@ -116,15 +118,16 @@ class ChromaVectorStore:
 
     def query(self, embedding: Sequence[float], k: int) -> List[DocumentChunk]:
         if self._use_fallback:
-            return self._collection.query(embedding, k)  # type: ignore[return-value]
+            fallback = cast(_InMemoryVectorStore, self._collection)
+            return fallback.query(embedding, k)
 
-        result = self._collection.query(  # type: ignore[attr-defined]
+        result: Any = self._collection.query(
             query_embeddings=[list(embedding)],
             n_results=k,
         )
-        documents = result.get("documents", [[]])[0]
-        metadatas = result.get("metadatas", [[]])[0]
-        scores = result.get("distances", [[]])[0]
+        documents = cast(List[str], result.get("documents", [[]])[0])
+        metadatas = cast(List[Dict[str, Any]], result.get("metadatas", [[]])[0])
+        scores = cast(List[float], result.get("distances", [[]])[0])
         chunks: List[DocumentChunk] = []
         for doc, meta, score in zip(documents, metadatas, scores, strict=False):
             chunks.append(

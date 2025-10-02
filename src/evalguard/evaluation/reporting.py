@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import pandas as pd
 import plotly.express as px
@@ -106,7 +106,7 @@ def _build_chart_data(per_example: pd.DataFrame) -> str:
     fig = px.bar(
         melted, x="value", y="question", color="model", facet_col="variable", orientation="h"
     )
-    return fig.to_json()
+    return cast(str, fig.to_json())
 
 
 def generate_html_report(

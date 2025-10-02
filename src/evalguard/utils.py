@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, TypeVar
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 T = TypeVar("T")
 

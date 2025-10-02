@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import importlib
 import statistics
-from typing import Dict, List
+from typing import Any, Dict, List, TypedDict, cast
 
 from ..logging import get_logger
 from ..pipelines import PipelineRunResult
@@ -11,21 +12,26 @@ from . import EvaluationReport
 LOGGER = get_logger(__name__)
 
 
+class TruLensExample(TypedDict):
+    question: str
+    model: str
+    faithfulness: float
+    coherence: float
+
+
 class TruLensRunner:
     """Heuristic fallback inspired by TruLens feedback functions."""
 
     def __init__(self) -> None:
-        self._trulens = None
+        self._trulens: Any = None
         try:
-            import trulens_eval  # type: ignore
-
-            self._trulens = trulens_eval
+            self._trulens = importlib.import_module("trulens_eval")
             LOGGER.info("TruLens available; using built-in feedback functions")
         except Exception as exc:  # pragma: no cover - optional
             LOGGER.debug("TruLens not available: %s. Using heuristic evaluator.", exc)
 
     def evaluate(self, results: List[PipelineRunResult]) -> EvaluationReport:
-        per_example: List[Dict[str, float]] = []
+        per_example: List[TruLensExample] = []
         for result in results:
             faithfulness = self._compute_faithfulness(result)
             coherence = self._compute_coherence(result)
@@ -41,7 +47,11 @@ class TruLensRunner:
             "faithfulness_mean": statistics.fmean(item["faithfulness"] for item in per_example),
             "coherence_mean": statistics.fmean(item["coherence"] for item in per_example),
         }
-        return EvaluationReport(name="trulens", per_example=per_example, aggregate=aggregate)
+        return EvaluationReport(
+            name="trulens",
+            per_example=cast(List[Dict[str, Any]], per_example),
+            aggregate=aggregate,
+        )
 
     def _compute_faithfulness(self, result: PipelineRunResult) -> float:
         if not result.guardrail.citations or not result.contexts:
