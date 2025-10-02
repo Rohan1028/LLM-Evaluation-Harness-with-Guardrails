@@ -9,6 +9,7 @@ def test_pipeline_with_mock_provider(tmp_path):
     settings = Settings.default()
     settings.rag.collection = "test"
     settings.guardrails.max_retries = 1
+    settings.guardrails.min_citations = 1
 
     corpus_dir = tmp_path / "corpus"
     corpus_dir.mkdir()

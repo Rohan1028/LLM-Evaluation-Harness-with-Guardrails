@@ -158,11 +158,12 @@ def load_settings(config_path: Optional[Path] = None) -> Settings:
         Path.cwd() / DEFAULT_CONFIG_NAME,
         DEFAULT_SETTINGS.project_root / DEFAULT_CONFIG_NAME,
     ):
-        if candidate and candidate.exists():
-            with candidate.open("r", encoding="utf-8") as fh:
-                data = yaml.safe_load(fh) or {}
-            merged = _merge_dicts(DEFAULT_SETTINGS.model_dump(mode="json"), data)
-            return Settings(**merged)
+        if not candidate or candidate.is_dir() or not candidate.exists():
+            continue
+        with candidate.open("r", encoding="utf-8") as fh:
+            data = yaml.safe_load(fh) or {}
+        merged = _merge_dicts(DEFAULT_SETTINGS.model_dump(mode="json"), data)
+        return Settings(**merged)
 
     return DEFAULT_SETTINGS
 
