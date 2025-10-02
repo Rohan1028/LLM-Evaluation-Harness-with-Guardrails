@@ -30,7 +30,12 @@ class RetrievedContext:
         )
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"doc_id": self.doc_id, "chunk_id": self.chunk_id, "text": self.text, "score": self.score}
+        return {
+            "doc_id": self.doc_id,
+            "chunk_id": self.chunk_id,
+            "text": self.text,
+            "score": self.score,
+        }
 
 
 @dataclass
@@ -82,7 +87,11 @@ class RAGPipeline:
         self.embedder = embedder
         self.vector_store = vector_store
         self.rag_config: RAGConfig = settings.rag
-        self.guardrail_runner = GuardrailRunner(settings.guardrails if isinstance(settings.guardrails, GuardrailConfig) else GuardrailConfig())
+        self.guardrail_runner = GuardrailRunner(
+            settings.guardrails
+            if isinstance(settings.guardrails, GuardrailConfig)
+            else GuardrailConfig()
+        )
 
     def run(
         self,
@@ -109,7 +118,9 @@ class RAGPipeline:
             )
             if guardrail_result.needs_retry:
                 LOGGER.info("Fact-check retry triggered for question '%s'", question)
-                prompt = guardrail_result.retry_prompt or self._build_prompt(question, contexts, metadata or {})
+                prompt = guardrail_result.retry_prompt or self._build_prompt(
+                    question, contexts, metadata or {}
+                )
                 continue
             if guardrail_result.passed:
                 break
@@ -132,7 +143,9 @@ class RAGPipeline:
             question=question,
             retry_count=attempts - 1,
             guardrail_passed=guardrail_result.passed,
-            citations=[{"doc_id": c.doc_id, "chunk_id": c.chunk_id} for c in guardrail_result.citations],
+            citations=[
+                {"doc_id": c.doc_id, "chunk_id": c.chunk_id} for c in guardrail_result.citations
+            ],
             toxicity=guardrail_result.toxicity,
         )
 
@@ -167,11 +180,12 @@ class RAGPipeline:
             instructions += " The previous answer violated guardrails; repair it now."
 
         if metadata.get("doc_hint"):
-            instructions += f" Emphasize evidence from documents related to '{metadata['doc_hint']}'."
+            instructions += (
+                f" Emphasize evidence from documents related to '{metadata['doc_hint']}'."
+            )
 
         prompt = f"{instructions}\n\nQuestion: {question}\nContexts:\n"
         for ctx in contexts:
             prompt += f"- [{ctx.doc_id}:{ctx.chunk_id}] {ctx.text}\n"
         prompt += "\nAnswer:"
         return prompt
-

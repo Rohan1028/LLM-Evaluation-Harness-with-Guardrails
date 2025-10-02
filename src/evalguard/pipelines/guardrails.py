@@ -168,7 +168,7 @@ class GuardrailRunner:
                             "type": "object",
                             "properties": {
                                 "doc_id": {"type": "string"},
-                                "chunk_id": {"type": "integer"}
+                                "chunk_id": {"type": "integer"},
                             },
                         },
                     },
@@ -206,4 +206,3 @@ def extract_citations(text: str) -> List[Citation]:
 def validate_citations(citations: Iterable[Citation], contexts: Sequence[dict]) -> bool:
     mapped = {(ctx["doc_id"], ctx["chunk_id"]) for ctx in contexts}
     return all((citation.doc_id, citation.chunk_id) in mapped for citation in citations)
-

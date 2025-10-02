@@ -99,7 +99,10 @@ class MockProvider(Provider):
     ) -> str:
         self._last_prompt = prompt
         lower_prompt = prompt.lower()
-        if "answer with 'yes' or 'no'" in lower_prompt or "respond with 'yes' or 'no'" in lower_prompt:
+        if (
+            "answer with 'yes' or 'no'" in lower_prompt
+            or "respond with 'yes' or 'no'" in lower_prompt
+        ):
             return "yes"
         contexts = self._extract_contexts(prompt)
         if not contexts:
@@ -129,5 +132,3 @@ class MockProvider(Provider):
 
     def validate(self) -> None:
         LOGGER.debug("MockProvider ready with deterministic outputs.")
-
-

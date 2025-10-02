@@ -83,4 +83,3 @@ def ingest_corpus(
     stats = IngestStats(documents=len(documents), chunks=len(chunk_records))
     LOGGER.info("Ingested %d documents into collection '%s'", stats.documents, collection_name)
     return stats
-

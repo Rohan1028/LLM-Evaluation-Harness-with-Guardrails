@@ -101,4 +101,3 @@ def slugify(value: str, sep: str = "-") -> str:
     while sep * 2 in cleaned:
         cleaned = cleaned.replace(sep * 2, sep)
     return cleaned.strip(sep).lower()
-

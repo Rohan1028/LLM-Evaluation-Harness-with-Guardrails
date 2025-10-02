@@ -27,11 +27,9 @@ class VectorStore(Protocol):
         embeddings: Sequence[Sequence[float]],
         metadatas: Sequence[Dict[str, Any]],
         documents: Sequence[str],
-    ) -> None:
-        ...
+    ) -> None: ...
 
-    def query(self, embedding: Sequence[float], k: int) -> List[DocumentChunk]:
-        ...
+    def query(self, embedding: Sequence[float], k: int) -> List[DocumentChunk]: ...
 
 
 class _InMemoryVectorStore:
@@ -47,7 +45,12 @@ class _InMemoryVectorStore:
     ) -> None:
         for idx, emb, meta, doc in zip(ids, embeddings, metadatas, documents, strict=False):
             self._entries.append(
-                {"id": idx, "embedding": np.array(emb, dtype=np.float32), "metadata": meta, "document": doc}
+                {
+                    "id": idx,
+                    "embedding": np.array(emb, dtype=np.float32),
+                    "metadata": meta,
+                    "document": doc,
+                }
             )
 
     def query(self, embedding: Sequence[float], k: int) -> List[DocumentChunk]:
@@ -134,4 +137,3 @@ class ChromaVectorStore:
                 )
             )
         return chunks
-

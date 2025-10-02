@@ -38,7 +38,9 @@ class OpenAIProvider(Provider):
                     stop=stop,
                 )
                 if hasattr(response, "output") and response.output:
-                    return "".join(item.get("content", [{}])[0].get("text", "") for item in response.output)
+                    return "".join(
+                        item.get("content", [{}])[0].get("text", "") for item in response.output
+                    )
                 return getattr(response, "output_text", "")
             chat = self._client.chat.completions.create(  # type: ignore[attr-defined]
                 model=self.model,

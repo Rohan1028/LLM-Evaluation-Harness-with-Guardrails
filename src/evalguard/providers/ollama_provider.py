@@ -47,4 +47,3 @@ class OllamaProvider(Provider):
             resp.raise_for_status()
         except Exception as exc:
             LOGGER.warning("Ollama ping failed: %s", exc)
-

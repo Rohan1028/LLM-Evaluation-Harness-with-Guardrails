@@ -42,9 +42,13 @@ class RagasRunner:
                 }
             )
         aggregate = {
-            "answer_relevancy_mean": statistics.fmean(item["answer_relevancy"] for item in per_example),
+            "answer_relevancy_mean": statistics.fmean(
+                item["answer_relevancy"] for item in per_example
+            ),
             "faithfulness_mean": statistics.fmean(item["faithfulness"] for item in per_example),
-            "context_precision_mean": statistics.fmean(item["context_precision"] for item in per_example),
+            "context_precision_mean": statistics.fmean(
+                item["context_precision"] for item in per_example
+            ),
             "context_recall_mean": statistics.fmean(item["context_recall"] for item in per_example),
         }
         return EvaluationReport(name="ragas", per_example=per_example, aggregate=aggregate)

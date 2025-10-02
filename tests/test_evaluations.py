@@ -46,4 +46,3 @@ def test_trulens_runner() -> None:
     runner = TruLensRunner()
     report = runner.evaluate([build_result()])
     assert "faithfulness_mean" in report.aggregate
-

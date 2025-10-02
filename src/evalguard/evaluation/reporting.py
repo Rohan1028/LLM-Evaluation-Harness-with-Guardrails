@@ -76,7 +76,8 @@ def persist_run_artifacts(
         aggregate.update({f"{report.name}_{k}": v for k, v in report.aggregate.items()})
 
     tox_stats = {
-        "toxicity_mean": sum(res.guardrail.toxicity for res in run_results) / max(len(run_results), 1),
+        "toxicity_mean": sum(res.guardrail.toxicity for res in run_results)
+        / max(len(run_results), 1),
         "toxicity_max": max((res.guardrail.toxicity for res in run_results), default=0.0),
     }
     aggregate.update(tox_stats)
@@ -98,8 +99,13 @@ def persist_run_artifacts(
 def _build_chart_data(per_example: pd.DataFrame) -> str:
     if per_example.empty:
         return json.dumps([])
-    melted = per_example.melt(id_vars=["model", "question"], value_vars=[col for col in per_example.columns if col not in {"model", "question"}])
-    fig = px.bar(melted, x="value", y="question", color="model", facet_col="variable", orientation="h")
+    melted = per_example.melt(
+        id_vars=["model", "question"],
+        value_vars=[col for col in per_example.columns if col not in {"model", "question"}],
+    )
+    fig = px.bar(
+        melted, x="value", y="question", color="model", facet_col="variable", orientation="h"
+    )
     return fig.to_json()
 
 

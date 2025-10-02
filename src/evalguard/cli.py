@@ -35,13 +35,17 @@ def _init_settings(config: Optional[Path]) -> Settings:
 
 def _build_vector_store(settings: Settings, collection: Optional[str] = None) -> ChromaVectorStore:
     collection_name = collection or settings.rag.collection
-    return ChromaVectorStore(collection_name=collection_name, persist_directory=str(settings.persist_dir))
+    return ChromaVectorStore(
+        collection_name=collection_name, persist_directory=str(settings.persist_dir)
+    )
 
 
 def _build_pipeline(provider: Provider, settings: Settings) -> RAGPipeline:
     embedder = build_embedder(prefer_fallback=False)
     vector_store = _build_vector_store(settings)
-    return RAGPipeline(provider=provider, embedder=embedder, vector_store=vector_store, settings=settings)
+    return RAGPipeline(
+        provider=provider, embedder=embedder, vector_store=vector_store, settings=settings
+    )
 
 
 @app.command()
@@ -53,7 +57,9 @@ def ingest(
     """Embed and ingest a corpus into the vector store."""
     settings = _init_settings(config)
     embedder = build_embedder(prefer_fallback=False)
-    vector_store = ChromaVectorStore(collection_name=collection, persist_directory=str(settings.persist_dir))
+    vector_store = ChromaVectorStore(
+        collection_name=collection, persist_directory=str(settings.persist_dir)
+    )
     stats = ingest_corpus(
         corpus_dir=corpus,
         collection_name=collection,
@@ -67,7 +73,9 @@ def ingest(
 @app.command()
 def run(
     suite: Annotated[str, typer.Option(help="QA suite name (e.g., demo)")] = "demo",
-    models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model specifications")] = ("mock:deterministic",),
+    models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model specifications")] = (
+        "mock:deterministic",
+    ),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     k: Annotated[Optional[int], typer.Option(help="Override retrieval top-k")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory for run artifacts")] = None,
@@ -87,7 +95,9 @@ def run(
     for spec in models:
         name, provider = build_provider_from_spec(spec, provider_configs)
         LOGGER.info("Running suite '%s' with provider %s (%s)", suite, name, provider.model)
-        pipeline = RAGPipeline(provider=provider, embedder=embedder, vector_store=vector_store, settings=settings)
+        pipeline = RAGPipeline(
+            provider=provider, embedder=embedder, vector_store=vector_store, settings=settings
+        )
         pipeline.rag_config.retriever_top_k = top_k
         for row in dataset:
             result = pipeline.run(
@@ -103,7 +113,9 @@ def run(
     reports.extend([ragas_report, trulens_report])
 
     out_dir = out or (settings.reports_dir / f"run_{suite}")
-    artifact_paths = persist_run_artifacts(out_dir=out_dir, run_results=results, reports=reports, adversarial=[])
+    artifact_paths = persist_run_artifacts(
+        out_dir=out_dir, run_results=results, reports=reports, adversarial=[]
+    )
 
     rprint(f"[green]Run complete[/green]. Artifacts stored in {out_dir}")
     rprint(json.dumps({report.name: report.aggregate for report in reports}, indent=2))
@@ -112,8 +124,12 @@ def run(
 
 @app.command()
 def adversarial(
-    suite: Annotated[str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")] = "all",
-    models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model spec")] = ("mock:deterministic",),
+    suite: Annotated[
+        str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")
+    ] = "all",
+    models: Annotated[Tuple[str, ...], typer.Argument(help="Provider:model spec")] = (
+        "mock:deterministic",
+    ),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory")] = None,
 ) -> None:
@@ -168,7 +184,9 @@ def regress(
     current: Annotated[Path, typer.Option(..., help="Current aggregate JSON")],
     baseline: Annotated[Path, typer.Option(..., help="Baseline aggregate JSON")],
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
-    update_baseline: Annotated[bool, typer.Option(help="Update baseline with current metrics")] = False,
+    update_baseline: Annotated[
+        bool, typer.Option(help="Update baseline with current metrics")
+    ] = False,
 ) -> None:
     """Compare current metrics to baseline thresholds and fail on regression."""
     settings = _init_settings(config)
@@ -185,5 +203,3 @@ def regress(
 
 if __name__ == "__main__":
     app()
-
-

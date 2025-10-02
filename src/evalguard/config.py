@@ -115,7 +115,9 @@ class Settings(BaseModel):
     def random_seed(self) -> int:
         return self.global_config.random_seed
 
-    def get_provider_config(self, name: str, model_override: Optional[str] = None) -> ProviderConfig:
+    def get_provider_config(
+        self, name: str, model_override: Optional[str] = None
+    ) -> ProviderConfig:
         if name not in self.providers:
             raise KeyError(f"Provider '{name}' not found in configuration")
         config = self.providers[name]
@@ -129,7 +131,9 @@ class Settings(BaseModel):
             providers={
                 "mock": ProviderConfig(provider="mock", model="deterministic", temperature=0.1),
                 "openai": ProviderConfig(provider="openai", model="gpt-4o-mini", temperature=0.1),
-                "anthropic": ProviderConfig(provider="anthropic", model="claude-3-5-sonnet-20240620"),
+                "anthropic": ProviderConfig(
+                    provider="anthropic", model="claude-3-5-sonnet-20240620"
+                ),
                 "azure-openai": ProviderConfig(provider="azure-openai", model="gpt-4o"),
                 "ollama": ProviderConfig(provider="ollama", model="llama3"),
             }

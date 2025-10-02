@@ -11,11 +11,9 @@ LOGGER = get_logger(__name__)
 
 
 class Embedder(Protocol):
-    def embed_documents(self, texts: Sequence[str]) -> List[List[float]]:
-        ...
+    def embed_documents(self, texts: Sequence[str]) -> List[List[float]]: ...
 
-    def embed_query(self, text: str) -> List[float]:
-        ...
+    def embed_query(self, text: str) -> List[float]: ...
 
 
 class _FallbackEmbedder:
@@ -70,6 +68,7 @@ class SentenceTransformerEmbedder:
         return embedding.tolist()
 
 
-def build_embedder(model_name: str = "all-MiniLM-L6-v2", prefer_fallback: bool = False) -> SentenceTransformerEmbedder:
+def build_embedder(
+    model_name: str = "all-MiniLM-L6-v2", prefer_fallback: bool = False
+) -> SentenceTransformerEmbedder:
     return SentenceTransformerEmbedder(model_name=model_name, use_fallback=prefer_fallback)
-
