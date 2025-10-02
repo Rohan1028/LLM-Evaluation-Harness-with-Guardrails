@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated, Any, Callable, List, Optional, Sequence, TypeVar
+from typing import Annotated, Any, Callable, List, Optional, TypeVar
 
 import typer
 from dotenv import load_dotenv
@@ -28,6 +28,8 @@ LOGGER = get_logger(__name__)
 
 
 CommandFunc = TypeVar("CommandFunc", bound=Callable[..., Any])
+DEFAULT_QA_MODELS = ("mock:deterministic",)
+DEFAULT_ADV_MODELS = ("mock:deterministic",)
 
 
 def typer_command(*args: Any, **kwargs: Any) -> Callable[[CommandFunc], CommandFunc]:
@@ -81,9 +83,9 @@ def ingest(
 @typer_command()
 def run(
     suite: Annotated[str, typer.Option(help="QA suite name (e.g., demo)")] = "demo",
-    models: Annotated[Sequence[str], typer.Argument(help="Provider:model specifications")] = (
-        "mock:deterministic",
-    ),
+    models: Annotated[
+        Optional[List[str]], typer.Argument(help="Provider:model specifications")
+    ] = None,
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     k: Annotated[Optional[int], typer.Option(help="Override retrieval top-k")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory for run artifacts")] = None,
@@ -91,6 +93,7 @@ def run(
     """Execute a QA evaluation suite with guardrails and metrics."""
     settings = _init_settings(config)
     top_k = k or settings.rag.retriever_top_k
+    selected_models = list(models or DEFAULT_QA_MODELS)
     data_path = settings.data_dir / "qa" / f"{suite}_qa.jsonl"
     if not data_path.exists():
         data_path = settings.data_dir / "qa" / "demo_qa.jsonl"
@@ -100,7 +103,7 @@ def run(
     results = []
     provider_configs = settings.providers
 
-    for spec in models:
+    for spec in selected_models:
         name, provider = build_provider_from_spec(spec, provider_configs)
         LOGGER.info("Running suite '%s' with provider %s (%s)", suite, name, provider.model)
         pipeline = RAGPipeline(
@@ -135,9 +138,7 @@ def adversarial(
     suite: Annotated[
         str, typer.Option(help="Suite name (jailbreaks|injections|safety|all)")
     ] = "all",
-    models: Annotated[Sequence[str], typer.Argument(help="Provider:model spec")] = (
-        "mock:deterministic",
-    ),
+    models: Annotated[Optional[List[str]], typer.Argument(help="Provider:model spec")] = None,
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory")] = None,
 ) -> None:
@@ -146,11 +147,12 @@ def adversarial(
     suites = ["jailbreaks", "injections", "safety"] if suite == "all" else [suite]
     suite_paths = [settings.data_dir / "adversarial" / f"{name}.yaml" for name in suites]
     suite_paths = [path for path in suite_paths if path.exists()]
+    selected_models = list(models or DEFAULT_ADV_MODELS)
     if not suite_paths:
         raise FileNotFoundError("No adversarial suites found.")
 
     results = []
-    for spec in models:
+    for spec in selected_models:
         name, provider = build_provider_from_spec(spec, settings.providers)
         provider_instance = provider
 
