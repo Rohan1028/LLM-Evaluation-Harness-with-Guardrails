@@ -70,3 +70,9 @@ ignore_missing_imports = true
 minversion = "8.0"
 addopts = "-q --disable-warnings"
 testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/evalguard"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/evalguard", "README.md", "LICENSE", "requirements.txt", "pyproject.toml", "data", "tests", ".github", "Makefile", "pre-commit-config.yaml"]
