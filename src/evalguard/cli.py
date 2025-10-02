@@ -86,8 +86,13 @@ def run(
     models: Annotated[
         Tuple[str, ...],
         typer.Option(
-            "--model", "-m", "--models", help="Provider:model specifications", multiple=True
-        ),
+            (),
+            "--model",
+            "-m",
+            "--models",
+            help="Provider:model specifications",
+            multiple=True,
+        ),  # noqa: B008
     ] = (),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     k: Annotated[Optional[int], typer.Option(help="Override retrieval top-k")] = None,
@@ -143,7 +148,14 @@ def adversarial(
     ] = "all",
     models: Annotated[
         Tuple[str, ...],
-        typer.Option("--model", "-m", "--models", help="Provider:model spec", multiple=True),
+        typer.Option(
+            (),
+            "--model",
+            "-m",
+            "--models",
+            help="Provider:model spec",
+            multiple=True,
+        ),  # noqa: B008
     ] = (),
     config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
     out: Annotated[Optional[Path], typer.Option(help="Output directory")] = None,
