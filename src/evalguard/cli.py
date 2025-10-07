@@ -182,8 +182,24 @@ def adversarial(
 
 @typer_command()
 def report(
-    input_path: Annotated[Path, typer.Option(..., help="Path to aggregate JSON")],
-    html_path: Annotated[Path, typer.Option(..., help="Output HTML path")],
+    input_path: Annotated[
+        Path,
+        typer.Option(
+            ...,
+            "--input-path",
+            "--input",
+            help="Path to aggregate JSON",
+        ),
+    ],
+    html_path: Annotated[
+        Path,
+        typer.Option(
+            ...,
+            "--html-path",
+            "--html",
+            help="Output HTML path",
+        ),
+    ],
     per_example: Annotated[Optional[Path], typer.Option(help="Per-example JSON path")] = None,
     adversarial: Annotated[Optional[Path], typer.Option(help="Adversarial JSON path")] = None,
 ) -> None:
