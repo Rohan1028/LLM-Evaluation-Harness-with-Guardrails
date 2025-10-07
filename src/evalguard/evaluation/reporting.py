@@ -81,6 +81,22 @@ def persist_run_artifacts(
         "toxicity_max": max((res.guardrail.toxicity for res in run_results), default=0.0),
     }
     aggregate.update(tox_stats)
+
+    # Fill unprefixed aliases so existing templates can render without errors.
+    metric_aliases = {
+        "faithfulness_mean": [
+            "ragas_faithfulness_mean",
+            "trulens_faithfulness_mean",
+        ],
+        "answer_relevancy_mean": ["ragas_answer_relevancy_mean"],
+        "context_precision_mean": ["ragas_context_precision_mean"],
+        "context_recall_mean": ["ragas_context_recall_mean"],
+    }
+    for alias, candidates in metric_aliases.items():
+        for candidate in candidates:
+            if candidate in aggregate:
+                aggregate.setdefault(alias, aggregate[candidate])
+                break
     save_json(out_dir / "aggregate.json", aggregate)
 
     if adversarial:
