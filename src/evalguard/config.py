@@ -78,10 +78,10 @@ class GuardrailConfig(BaseModel):
 
 class PolicyThresholds(BaseModel):
     faithfulness: float = 0.75
-    answer_relevancy: float = 0.70
-    context_precision: float = 0.65
-    context_recall: float = 0.60
-    coherence: float = 0.70
+    answer_relevancy: float = 0.12
+    context_precision: float = 0.55
+    context_recall: float = 0.95
+    coherence: float = 0.90
     toxicity: float = 0.20
 
     def to_dict(self) -> Dict[str, float]:

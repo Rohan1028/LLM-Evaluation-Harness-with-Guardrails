@@ -23,6 +23,8 @@ reports/*.png
 reports/*.svg~
 reports/run_*/
 reports/adv_*/
+reports/ci_run/
+!reports/baseline_metrics.json
 
 # Environment files
 .env

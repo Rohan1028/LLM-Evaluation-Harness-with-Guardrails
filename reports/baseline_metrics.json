@@ -1,0 +1,14 @@
+{
+  "ragas_answer_relevancy_mean": 0.1257771164021164,
+  "ragas_faithfulness_mean": 0.75,
+  "ragas_context_precision_mean": 0.5833333333333334,
+  "ragas_context_recall_mean": 1.0,
+  "trulens_faithfulness_mean": 0.75,
+  "trulens_coherence_mean": 1.0,
+  "toxicity_mean": 0.0006248013572379326,
+  "toxicity_max": 0.000692625530064106,
+  "faithfulness_mean": 0.75,
+  "answer_relevancy_mean": 0.1257771164021164,
+  "context_precision_mean": 0.5833333333333334,
+  "context_recall_mean": 1.0
+}
