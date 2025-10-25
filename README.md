@@ -1,6 +1,7 @@
 # LLM Evaluation Harness with Guardrails
 
 ![Dashboard preview](reports/sample_dashboard.svg)
+*Multi-provider smoke dashboard (OpenAI - Azure - Anthropic) rendered from `reports/sample_dashboard.svg` without truncation.*
 
 ## Overview
 llm-eval-guardrails is a production-grade framework for building, guarding, and evaluating Retrieval-Augmented Generation (RAG) systems across multiple LLM providers. It ingests local corpora, enforces runtime guardrails (citations, toxicity, fact-check), orchestrates evaluations with TruLens & Ragas, and generates comprehensive regression-ready reports?ready to clone and run in minutes on Python 3.11.
