@@ -93,12 +93,12 @@ def generate_comparison_report(
     return summary
 
 
-def _build_metric_rows(
-    before: Dict[str, Any], after: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+def _build_metric_rows(before: Dict[str, Any], after: Dict[str, Any]) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     numeric_keys = sorted(
-        key for key in before.keys() & after.keys() if _is_numeric(before[key]) and _is_numeric(after[key])
+        key
+        for key in before.keys() & after.keys()
+        if _is_numeric(before[key]) and _is_numeric(after[key])
     )
     for key in numeric_keys:
         before_val = float(before[key])

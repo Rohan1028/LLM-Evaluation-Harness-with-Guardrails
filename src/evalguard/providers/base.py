@@ -74,7 +74,9 @@ class Provider(ABC):
                 )
                 if attempt >= max_attempts:
                     self._build_response(
-                        details=ProviderCallDetails(text="", metadata={"failed_prompt": bool(prompt)}),
+                        details=ProviderCallDetails(
+                            text="", metadata={"failed_prompt": bool(prompt)}
+                        ),
                         latency_ms=(time.perf_counter() - start) * 1000.0,
                         retries=attempt - 1,
                         queued_ms=queued_seconds * 1000.0,
@@ -195,7 +197,9 @@ class MockProvider(Provider):
             "answer with 'yes' or 'no'" in lower_prompt
             or "respond with 'yes' or 'no'" in lower_prompt
         ):
-            return ProviderCallDetails(text="yes", prompt_tokens=len(prompt.split()), completion_tokens=1)
+            return ProviderCallDetails(
+                text="yes", prompt_tokens=len(prompt.split()), completion_tokens=1
+            )
         contexts = self._extract_contexts(prompt)
         if not contexts:
             return ProviderCallDetails(

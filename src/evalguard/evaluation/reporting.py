@@ -82,8 +82,8 @@ def persist_run_artifacts(
         / max(len(run_results), 1),
         "toxicity_max": max((res.guardrail.toxicity for res in run_results), default=0.0),
     }
-    guardrail_pass_rate = (
-        sum(1 for res in run_results if res.guardrail.passed) / max(len(run_results), 1)
+    guardrail_pass_rate = sum(1 for res in run_results if res.guardrail.passed) / max(
+        len(run_results), 1
     )
     aggregate.update(tox_stats)
     aggregate["guardrail_pass_rate"] = round(guardrail_pass_rate, 4)

@@ -90,6 +90,7 @@ class ChromaVectorStore:
         self._use_fallback = False
         try:
             import chromadb
+
             api_key = os.getenv("CHROMA_API_KEY")
             tenant = os.getenv("CHROMA_TENANT")
             database = os.getenv("CHROMA_DATABASE")

@@ -30,8 +30,7 @@ def _contexts() -> list[dict[str, object]]:
 def test_schema_validation_passes_for_realistic_output() -> None:
     runner = _build_runner()
     answer = (
-        "SentinelIQ is a unified intelligence platform for regulated industries. "
-        "[00_welcome:0]"
+        "SentinelIQ is a unified intelligence platform for regulated industries. [00_welcome:0]"
     )
     result = runner.enforce(
         answer=answer,
