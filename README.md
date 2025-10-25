@@ -195,6 +195,8 @@ The regression smoke workflow exercises the full stack (managed Chroma Cloud ing
 | `ANTHROPIC_API_KEY` | Claude 3 Haiku calls during smoke |
 | `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE` (optional `CHROMA_COLLECTION`, `CHROMA_HOST`) | Access to your managed Chroma Cloud tenant for ingestion |
 
+> ℹ️ The workflow also exports `OPENAI_API_VERSION=2024-08-01-preview` (in addition to `AZURE_OPENAI_API_VERSION`) so the Azure OpenAI SDK accepts chat-completions requests. If you change model versions, update both variables.
+
 With those secrets in place, the workflow ingests the demo corpus, runs the evaluation suites, and enforces the regression gate automatically.
 
 ## Datasets

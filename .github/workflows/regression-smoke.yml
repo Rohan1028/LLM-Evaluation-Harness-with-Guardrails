@@ -15,6 +15,7 @@ jobs:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
       AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
       AZURE_OPENAI_DEPLOYMENT: "gpt-4o"
+      OPENAI_API_VERSION: "2024-08-01-preview"
       AZURE_OPENAI_API_VERSION: "2024-08-01-preview"
       CHROMA_API_KEY: ${{ secrets.CHROMA_API_KEY }}
       CHROMA_TENANT: ${{ secrets.CHROMA_TENANT }}
