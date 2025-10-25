@@ -12,6 +12,7 @@ httpx>=0.25.0
 pyyaml>=6.0.0
 tqdm>=4.66.0
 jsonschema>=4.23.0
+openai>=1.55.0
 black>=24.4.0
 ruff>=0.4.0
 mypy>=1.9.0
