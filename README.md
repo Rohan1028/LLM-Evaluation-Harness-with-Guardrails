@@ -174,6 +174,7 @@ Reports are dropped into the run directory and summarized in `reports/index.html
 - HTML dashboard (Plotly charts, tables, status badges)
 - Adversarial outcomes summary
 - `python -m evalguard.cli compare` creates a before/after dashboard that highlights metric deltas, guardrail pass-rate improvements, and spend/latency changes between two runs.
+- The repo ships with `reports/run_demo` (baseline) and `reports/run_demo_multi` (OpenAI + Azure + Anthropic) so the screenshot below and `compare` output have real telemetry behind them.
 
 The repository ships with a sample dashboard SVG for documentation and a baseline metrics JSON for regression gates.
 
@@ -182,6 +183,18 @@ The repository ships with a sample dashboard SVG for documentation and a baselin
 - Style & type checks via Ruff, Black (`--check`), and MyPy (`--strict`).
 - GitHub Actions workflow (`.github/workflows/ci.yml`) runs lint, type-check, tests, an E2E smoke, report generation, and regression gating; `.github/workflows/regression-smoke.yml` replays a deterministic smoke eval on every push/PR and fails if baseline policies regress.
 - Pre-commit hooks ensure consistent formatting and dependency security scans.
+
+### CI Smoke Workflow
+The regression smoke workflow exercises the full stack (managed Chroma Cloud ingest + OpenAI, Azure OpenAI, and Anthropic calls). Add the following repository secrets before enabling it:
+
+| Secret | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | GPT-4o mini calls during the smoke run |
+| `AZURE_OPENAI_API_KEY` / `AZURE_OPENAI_ENDPOINT` | Azure GPT-4o deployment used in smoke |
+| `ANTHROPIC_API_KEY` | Claude 3 Haiku calls during smoke |
+| `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE` (optional `CHROMA_COLLECTION`, `CHROMA_HOST`) | Access to your managed Chroma Cloud tenant for ingestion |
+
+With those secrets in place, the workflow ingests the demo corpus, runs the evaluation suites, and enforces the regression gate automatically.
 
 ## Datasets
 Demo corpus (`data/corpus`) describes a fictional product. QA dataset (`data/qa/demo_qa.jsonl`) holds 12 grounded examples with metadata and truths. Adversarial suites (`data/adversarial/*.yaml`) capture jailbreaks, prompt injections, refusal bait, and citation tampering probes.
