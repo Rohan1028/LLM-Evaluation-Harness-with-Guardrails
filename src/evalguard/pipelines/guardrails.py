@@ -3,7 +3,18 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 from ..config import GuardrailConfig
 from ..logging import get_logger
@@ -17,10 +28,18 @@ CITATION_PATTERN = re.compile(r"\[(?P<doc>[^:\]]+):(?P<chunk>\d+)\]")
 _ToxicityPipeline = Callable[[str], Sequence[Mapping[str, Any]]]
 
 try:  # pragma: no cover - optional dependency
-    from jsonschema import Draft7Validator, ValidationError
+    from jsonschema import Draft7Validator as RuntimeDraft7Validator
+    from jsonschema import ValidationError as RuntimeValidationError
 except Exception:  # pragma: no cover - optional dependency
-    Draft7Validator = None  # type: ignore[assignment]
-    ValidationError = Exception
+    RuntimeDraft7Validator = None
+    RuntimeValidationError = Exception
+
+if TYPE_CHECKING:  # pragma: no cover - typing helper
+    from jsonschema import Draft7Validator as Draft7ValidatorType
+    from jsonschema import ValidationError as ValidationErrorType
+else:  # pragma: no cover - runtime fallback
+    Draft7ValidatorType = Any
+    ValidationErrorType = Exception
 
 
 @dataclass
@@ -51,7 +70,7 @@ class GuardrailRunner:
         self.config = config
         self._toxicity_pipeline: Optional[_ToxicityPipeline] = self._load_toxicity_pipeline()
         self._guardrails: Optional[Any] = self._load_guardrails_spec()
-        self._schema_validator: Optional[Draft7Validator] = self._load_schema_validator()
+        self._schema_validator: Optional[Draft7ValidatorType] = self._load_schema_validator()
 
     def enforce(
         self,
@@ -209,10 +228,10 @@ class GuardrailRunner:
             return cast(str, parsed["answer"])
         return answer
 
-    def _load_schema_validator(self) -> Optional[Draft7Validator]:
+    def _load_schema_validator(self) -> Optional[Draft7ValidatorType]:
         if not self.config.rail_spec_enabled or not self.config.rail_spec_path:
             return None
-        if Draft7Validator is None:
+        if RuntimeDraft7Validator is None:
             LOGGER.warning("jsonschema not installed; structured validation disabled")
             return None
         if not self.config.rail_spec_path.exists():
@@ -220,7 +239,7 @@ class GuardrailRunner:
             return None
         try:
             schema = json.loads(self.config.rail_spec_path.read_text(encoding="utf-8"))
-            return Draft7Validator(schema)
+            return cast(Draft7ValidatorType, RuntimeDraft7Validator(schema))
         except Exception as exc:  # pragma: no cover - schema parsing
             LOGGER.warning("Failed to load schema %s: %s", self.config.rail_spec_path, exc)
             return None
@@ -239,7 +258,7 @@ class GuardrailRunner:
         try:
             self._schema_validator.validate(payload)
             return None
-        except ValidationError as exc:
+        except ValidationErrorType as exc:
             LOGGER.debug("Structured schema validation failed: %s", exc)
             return "schema_validation_failed"
 
