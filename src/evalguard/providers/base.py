@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 import random
+import re
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -73,7 +73,7 @@ class Provider(ABC):
                     exc,
                 )
                 if attempt >= max_attempts:
-                    telemetry = self._build_response(
+                    self._build_response(
                         details=ProviderCallDetails(text="", metadata={"failed_prompt": bool(prompt)}),
                         latency_ms=(time.perf_counter() - start) * 1000.0,
                         retries=attempt - 1,

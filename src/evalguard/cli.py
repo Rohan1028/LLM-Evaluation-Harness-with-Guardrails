@@ -11,9 +11,9 @@ from rich import print as rprint
 from .config import Settings, load_settings
 from .embeddings import build_embedder
 from .evaluation import EvaluationReport
+from .evaluation.comparison import generate_comparison_report
 from .evaluation.ragas_runner import RagasRunner
 from .evaluation.regression import compare_metrics
-from .evaluation.comparison import generate_comparison_report
 from .evaluation.reporting import generate_html_report, persist_run_artifacts
 from .evaluation.safety import run_adversarial_suite
 from .evaluation.trulens_runner import TruLensRunner
