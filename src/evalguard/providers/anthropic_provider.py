@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, cast
 from ..config import ProviderConfig
 from ..logging import get_logger
 from .base import Provider, ProviderError, register_provider
+from .telemetry import ProviderCallDetails
 
 LOGGER = get_logger(__name__)
 
@@ -29,12 +30,12 @@ class AnthropicProvider(Provider):
         api_key = config.metadata.get("api_key")
         self._client = cast(AnthropicClient, anthropic_cls(api_key=api_key))
 
-    def generate(
+    def _call_model(
         self,
         prompt: str,
         system: Optional[str] = None,
         stop: Optional[Iterable[str]] = None,
-    ) -> str:
+    ) -> ProviderCallDetails:
         try:
             kwargs: Dict[str, Any] = {}
             if stop:
@@ -51,9 +52,25 @@ class AnthropicProvider(Provider):
                 **kwargs,
             )
             content = response.content[0]
-            if hasattr(content, "text"):
-                return cast(str, content.text)
-            return str(content)
+            text = cast(str, getattr(content, "text", content))
+            usage = getattr(response, "usage", None)
+            usage_dict = usage if isinstance(usage, dict) else getattr(usage, "__dict__", {})
+            prompt_tokens = (
+                getattr(usage, "input_tokens", None)
+                or (usage_dict.get("input_tokens") if isinstance(usage_dict, dict) else None)
+                or 0
+            )
+            completion_tokens = (
+                getattr(usage, "output_tokens", None)
+                or (usage_dict.get("output_tokens") if isinstance(usage_dict, dict) else None)
+                or 0
+            )
+            return ProviderCallDetails(
+                text=text,
+                prompt_tokens=int(prompt_tokens or 0),
+                completion_tokens=int(completion_tokens or 0),
+                metadata={"request_id": getattr(response, "id", None)},
+            )
         except Exception as exc:  # pragma: no cover - network
             raise ProviderError(f"Anthropic generate failed: {exc}") from exc
 

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 
 from ..config import GuardrailConfig, RAGConfig, Settings
 from ..embeddings import Embedder
 from ..logging import get_logger
 from ..providers import Provider
+from ..providers.telemetry import ProviderCallTelemetry
 from ..vectorstore import ChromaVectorStore, DocumentChunk
 from .guardrails import GuardrailResult, GuardrailRunner
 
@@ -47,6 +48,8 @@ class PipelineMetadata:
     guardrail_passed: bool
     citations: List[Dict[str, Any]]
     toxicity: float
+    latency_ms: float = 0.0
+    cost_usd: float = 0.0
 
 
 @dataclass
@@ -59,6 +62,7 @@ class PipelineRunResult:
     contexts: List[RetrievedContext]
     guardrail: GuardrailResult
     metadata: PipelineMetadata
+    telemetry: List[ProviderCallTelemetry] = field(default_factory=list)
 
     def to_record(self) -> Dict[str, Any]:
         return {
@@ -72,6 +76,8 @@ class PipelineRunResult:
             "toxicity": self.guardrail.toxicity,
             "guardrail_passed": self.guardrail.passed,
             "retry_count": self.metadata.retry_count,
+            "latency_ms": self.metadata.latency_ms,
+            "cost_usd": self.metadata.cost_usd,
         }
 
 
@@ -105,11 +111,19 @@ class RAGPipeline:
         answer = ""
         guardrail_result: Optional[GuardrailResult] = None
         prompt = self._build_prompt(question, contexts, metadata or {})
+        attempt_logs: List[ProviderCallTelemetry] = []
 
         while attempts < max_attempts:
             attempts += 1
             LOGGER.debug("Generating answer attempt %d/%d", attempts, max_attempts)
-            answer = self.provider.generate(prompt)
+            response = self.provider.generate(prompt)
+            answer = response.text
+            attempt_logs.append(
+                response.telemetry.attach(
+                    question=question,
+                    attempt=attempts,
+                )
+            )
             guardrail_result = self.guardrail_runner.enforce(
                 answer=answer,
                 contexts=[ctx.to_dict() for ctx in contexts],
@@ -147,6 +161,8 @@ class RAGPipeline:
                 {"doc_id": c.doc_id, "chunk_id": c.chunk_id} for c in guardrail_result.citations
             ],
             toxicity=guardrail_result.toxicity,
+            latency_ms=attempt_logs[-1].latency_ms if attempt_logs else 0.0,
+            cost_usd=attempt_logs[-1].cost_usd if attempt_logs else 0.0,
         )
 
         return PipelineRunResult(
@@ -158,6 +174,7 @@ class RAGPipeline:
             contexts=contexts,
             guardrail=guardrail_result,
             metadata=meta,
+            telemetry=attempt_logs,
         )
 
     def _retrieve(self, question: str) -> List[RetrievedContext]:

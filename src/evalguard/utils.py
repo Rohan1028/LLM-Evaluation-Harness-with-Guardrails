@@ -30,6 +30,14 @@ def save_json(path: Path, data: Any) -> None:
         json.dump(data, fh, indent=2, ensure_ascii=False)
 
 
+def save_jsonl(path: Path, rows: Sequence[Dict[str, Any]]) -> None:
+    ensure_dir(path.parent)
+    with path.open("w", encoding="utf-8") as fh:
+        for row in rows:
+            fh.write(json.dumps(row, ensure_ascii=False))
+            fh.write("\n")
+
+
 def save_csv(path: Path, rows: Sequence[Dict[str, Any]]) -> None:
     import pandas as pd
 

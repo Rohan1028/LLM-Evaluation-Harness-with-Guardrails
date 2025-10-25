@@ -13,6 +13,7 @@ from .embeddings import build_embedder
 from .evaluation import EvaluationReport
 from .evaluation.ragas_runner import RagasRunner
 from .evaluation.regression import compare_metrics
+from .evaluation.comparison import generate_comparison_report
 from .evaluation.reporting import generate_html_report, persist_run_artifacts
 from .evaluation.safety import run_adversarial_suite
 from .evaluation.trulens_runner import TruLensRunner
@@ -133,7 +134,11 @@ def run(
 
     out_dir = out or (settings.reports_dir / f"run_{suite}")
     artifact_paths = persist_run_artifacts(
-        out_dir=out_dir, run_results=results, reports=reports, adversarial=[]
+        out_dir=out_dir,
+        run_results=results,
+        reports=reports,
+        adversarial=[],
+        telemetry_config=settings.telemetry,
     )
 
     rprint(f"[green]Run complete[/green]. Artifacts stored in {out_dir}")
@@ -213,6 +218,62 @@ def report(
         output_html=html_path,
     )
     rprint(f"[green]Report generated[/green] -> {html_path}")
+
+
+@typer_command()
+def compare(
+    before: Annotated[
+        Path,
+        typer.Option(..., help="Path to baseline aggregate JSON"),
+    ],
+    after: Annotated[
+        Path,
+        typer.Option(..., help="Path to current aggregate JSON"),
+    ],
+    html: Annotated[
+        Path,
+        typer.Option("--html", help="Output HTML path"),
+    ] = Path("reports/comparison.html"),
+    summary: Annotated[
+        Optional[Path],
+        typer.Option(help="Optional JSON summary output path"),
+    ] = None,
+) -> None:
+    """Create a before/after dashboard comparing two evaluation runs."""
+    generate_comparison_report(before=before, after=after, output_html=html, summary_json=summary)
+    rprint(f"[green]Comparison written[/green] -> {html}")
+
+
+@typer_command()
+def vectorstore(
+    action: Annotated[str, typer.Argument(help="stats|export|compact")],
+    collection: Annotated[str, typer.Option(help="Collection name")] = "demo",
+    export_path: Annotated[
+        Optional[Path],
+        typer.Option(help="Destination for exports (required for export action)"),
+    ] = None,
+    config: Annotated[Optional[Path], typer.Option(help="Path to configuration YAML")] = None,
+) -> None:
+    """Utility operations for the configured Chroma vector store."""
+    settings = _init_settings(config)
+    store = ChromaVectorStore(
+        collection_name=collection, persist_directory=str(settings.persist_dir)
+    )
+    if action == "stats":
+        count = store.count()
+        rprint(f"[blue]Collection[/blue] {collection}: {count} vectors")
+        return
+    if action == "export":
+        if not export_path:
+            raise typer.BadParameter("export_path is required for export action")
+        store.export(export_path)
+        rprint(f"[green]Exported collection[/green] -> {export_path}")
+        return
+    if action == "compact":
+        summary = store.compact()
+        rprint(f"[green]Compaction summary[/green]: {summary}")
+        return
+    raise typer.BadParameter(f"Unknown action '{action}'. Expected stats|export|compact.")
 
 
 @typer_command()

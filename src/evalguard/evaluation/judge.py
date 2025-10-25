@@ -32,7 +32,7 @@ class LLMJudge:
             'Respond with JSON: {"score": <float>, "reasoning": "..."}'
         )
         try:
-            response = self.provider.generate(prompt)
+            response = self.provider.generate(prompt).text
             if response.strip().startswith("{"):
                 import json
 

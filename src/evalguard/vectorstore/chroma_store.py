@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import os
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Protocol, Sequence, cast
 
 import numpy as np
 
 from ..logging import get_logger
-from ..utils import cosine_similarity
+from ..utils import cosine_similarity, ensure_dir
 
 LOGGER = get_logger(__name__)
 
@@ -87,8 +90,22 @@ class ChromaVectorStore:
         self._use_fallback = False
         try:
             import chromadb
-
-            if persist_directory:
+            api_key = os.getenv("CHROMA_API_KEY")
+            tenant = os.getenv("CHROMA_TENANT")
+            database = os.getenv("CHROMA_DATABASE")
+            host = os.getenv("CHROMA_HOST")
+            if api_key and tenant and database:
+                kwargs: Dict[str, Any] = {
+                    "api_key": api_key,
+                    "tenant": tenant,
+                    "database": database,
+                }
+                if host:
+                    kwargs["host"] = host
+                self._client = chromadb.CloudClient(**kwargs)
+                collection_name = os.getenv("CHROMA_COLLECTION", collection_name)
+                self.collection_name = collection_name
+            elif persist_directory:
                 self._client = chromadb.PersistentClient(path=persist_directory)
             else:
                 self._client = chromadb.Client()
@@ -140,3 +157,42 @@ class ChromaVectorStore:
                 )
             )
         return chunks
+
+    def count(self) -> int:
+        if self._use_fallback:
+            fallback = cast(_InMemoryVectorStore, self._collection)
+            return len(fallback._entries)
+        return int(self._collection.count())
+
+    def export(self, path: Path) -> Path:
+        path = path.resolve()
+        ensure_dir(path.parent)
+        if self._use_fallback:
+            fallback = cast(_InMemoryVectorStore, self._collection)
+            payload = fallback._entries
+        else:
+            payload = self._collection.get(include=["metadatas", "documents", "ids"])
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        LOGGER.info("Exported collection '%s' to %s", self.collection_name, path)
+        return path
+
+    def compact(self) -> Dict[str, Any]:
+        if self._use_fallback:
+            LOGGER.info("Fallback vector store in use; nothing to compact.")
+            return {"mode": "memory", "status": "noop"}
+        rows = self._collection.get(include=["metadatas", "documents", "ids", "embeddings"])
+        ids = rows.get("ids", [])
+        if not ids:
+            LOGGER.info("Collection '%s' empty; skipping compaction.", self.collection_name)
+            return {"mode": "client", "status": "skipped"}
+        embeddings = rows.get("embeddings")
+        self._client.delete_collection(name=self.collection_name)
+        self._collection = self._client.create_collection(self.collection_name)
+        self._collection.add(
+            ids=ids,
+            embeddings=embeddings,
+            metadatas=rows.get("metadatas"),
+            documents=rows.get("documents"),
+        )
+        LOGGER.info("Compacted collection '%s' (%d vectors)", self.collection_name, len(ids))
+        return {"mode": "client", "status": "compacted", "count": len(ids)}

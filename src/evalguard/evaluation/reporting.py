@@ -8,9 +8,10 @@ import pandas as pd
 import plotly.express as px
 from jinja2 import Template
 
+from ..config import TelemetryConfig
 from ..logging import get_logger
 from ..pipelines import PipelineRunResult
-from ..utils import ensure_dir, git_sha, save_csv, save_json, timestamp_token
+from ..utils import ensure_dir, git_sha, hash_text, save_csv, save_json, save_jsonl, timestamp_token
 from . import EvaluationReport
 
 LOGGER = get_logger(__name__)
@@ -65,6 +66,7 @@ def persist_run_artifacts(
     run_results: List[PipelineRunResult],
     reports: List[EvaluationReport],
     adversarial: List[Dict[str, Any]],
+    telemetry_config: Optional[TelemetryConfig] = None,
 ) -> Dict[str, Path]:
     ensure_dir(out_dir)
     per_example_records = [result.to_record() for result in run_results]
@@ -80,7 +82,39 @@ def persist_run_artifacts(
         / max(len(run_results), 1),
         "toxicity_max": max((res.guardrail.toxicity for res in run_results), default=0.0),
     }
+    guardrail_pass_rate = (
+        sum(1 for res in run_results if res.guardrail.passed) / max(len(run_results), 1)
+    )
     aggregate.update(tox_stats)
+    aggregate["guardrail_pass_rate"] = round(guardrail_pass_rate, 4)
+    telemetry_cfg = telemetry_config or TelemetryConfig()
+    telemetry_rows: List[Dict[str, Any]] = []
+    if telemetry_cfg.enabled:
+        for result in run_results:
+            for attempt in result.telemetry:
+                record = attempt.to_dict()
+                record.update(
+                    question=_maybe_redact(result.question, telemetry_cfg.redact_prompts),
+                    answer=_maybe_redact(result.answer, telemetry_cfg.redact_responses),
+                    provider=result.provider,
+                )
+                telemetry_rows.append(record)
+        if telemetry_rows:
+            total_cost = sum(row.get("cost_usd", 0.0) for row in telemetry_rows)
+            avg_latency = sum(row.get("latency_ms", 0.0) for row in telemetry_rows) / max(
+                len(telemetry_rows), 1
+            )
+            aggregate.update(
+                {
+                    "telemetry_total_cost": round(total_cost, 6),
+                    "telemetry_avg_latency_ms": round(avg_latency, 3),
+                    "telemetry_request_count": len(telemetry_rows),
+                }
+            )
+            if telemetry_cfg.persist_requests_jsonl:
+                save_jsonl(out_dir / "requests.jsonl", telemetry_rows)
+            if telemetry_cfg.persist_requests_csv:
+                save_csv(out_dir / "requests.csv", telemetry_rows)
 
     # Fill unprefixed aliases so existing templates can render without errors.
     metric_aliases = {
@@ -151,3 +185,11 @@ def generate_html_report(
     )
     output_html.write_text(html, encoding="utf-8")
     LOGGER.info("HTML report written to %s", output_html)
+
+
+def _maybe_redact(text: str, should_redact: bool) -> str:
+    if not text:
+        return ""
+    if not should_redact:
+        return text
+    return f"[redacted:{hash_text(text)}]"

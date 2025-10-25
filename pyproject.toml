@@ -25,7 +25,8 @@ dependencies = [
   "sentence-transformers>=2.2.2",
   "httpx>=0.25.0",
   "pyyaml>=6.0.0",
-  "tqdm>=4.66.0"
+  "tqdm>=4.66.0",
+  "jsonschema>=4.23.0"
 ]
 
 [project.optional-dependencies]

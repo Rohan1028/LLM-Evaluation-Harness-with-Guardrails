@@ -7,6 +7,7 @@ import httpx
 from ..config import ProviderConfig
 from ..logging import get_logger
 from .base import Provider, ProviderError, register_provider
+from .telemetry import ProviderCallDetails
 
 LOGGER = get_logger(__name__)
 
@@ -17,12 +18,12 @@ class OllamaProvider(Provider):
         super().__init__(config)
         self._base_url = config.metadata.get("api_base") or "http://localhost:11434"
 
-    def generate(
+    def _call_model(
         self,
         prompt: str,
         system: Optional[str] = None,
         stop: Optional[Iterable[str]] = None,
-    ) -> str:
+    ) -> ProviderCallDetails:
         payload = {
             "model": self.model,
             "prompt": prompt if system is None else f"{system}\n\n{prompt}",
@@ -37,7 +38,7 @@ class OllamaProvider(Provider):
             if stop:
                 for token in stop:
                     text = text.split(token)[0]
-            return text
+            return ProviderCallDetails(text=text)
         except Exception as exc:  # pragma: no cover - network
             raise ProviderError(f"Ollama generate failed: {exc}") from exc
 

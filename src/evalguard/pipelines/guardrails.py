@@ -16,6 +16,12 @@ CITATION_PATTERN = re.compile(r"\[(?P<doc>[^:\]]+):(?P<chunk>\d+)\]")
 
 _ToxicityPipeline = Callable[[str], Sequence[Mapping[str, Any]]]
 
+try:  # pragma: no cover - optional dependency
+    from jsonschema import Draft7Validator, ValidationError
+except Exception:  # pragma: no cover - optional dependency
+    Draft7Validator = None  # type: ignore[misc]
+    ValidationError = Exception
+
 
 @dataclass
 class Citation:
@@ -45,6 +51,7 @@ class GuardrailRunner:
         self.config = config
         self._toxicity_pipeline: Optional[_ToxicityPipeline] = self._load_toxicity_pipeline()
         self._guardrails: Optional[Any] = self._load_guardrails_spec()
+        self._schema_validator: Optional[Draft7Validator] = self._load_schema_validator()
 
     def enforce(
         self,
@@ -81,7 +88,7 @@ class GuardrailRunner:
             except Exception as exc:  # pragma: no cover - optional
                 LOGGER.debug("Guardrails.ai parse failed: %s", exc)
 
-        return GuardrailResult(
+        result = GuardrailResult(
             answer=answer,
             citations=citations,
             toxicity=toxicity,
@@ -89,6 +96,10 @@ class GuardrailRunner:
             needs_retry=needs_retry,
             retry_prompt=retry_prompt,
         )
+        schema_error = self._validate_schema(result)
+        if schema_error:
+            result.violations.append(schema_error)
+        return result
 
     def _score_toxicity(self, text: str) -> float:
         if not text.strip():
@@ -124,7 +135,7 @@ class GuardrailRunner:
         prompt += "Is the answer faithful?"
         try:
             verdict = provider.generate(prompt, system="Respond with 'yes' or 'no'.")
-            return verdict.strip().lower().startswith("y")
+            return verdict.text.strip().lower().startswith("y")
         except Exception as exc:  # pragma: no cover
             LOGGER.debug("Fact-check call failed: %s", exc)
             return True
@@ -197,6 +208,40 @@ class GuardrailRunner:
         if isinstance(parsed, dict) and "answer" in parsed:
             return cast(str, parsed["answer"])
         return answer
+
+    def _load_schema_validator(self) -> Optional[Draft7Validator]:
+        if not self.config.rail_spec_enabled or not self.config.rail_spec_path:
+            return None
+        if Draft7Validator is None:
+            LOGGER.warning("jsonschema not installed; structured validation disabled")
+            return None
+        if not self.config.rail_spec_path.exists():
+            LOGGER.warning("Guardrail schema path %s missing", self.config.rail_spec_path)
+            return None
+        try:
+            schema = json.loads(self.config.rail_spec_path.read_text(encoding="utf-8"))
+            return Draft7Validator(schema)
+        except Exception as exc:  # pragma: no cover - schema parsing
+            LOGGER.warning("Failed to load schema %s: %s", self.config.rail_spec_path, exc)
+            return None
+
+    def _validate_schema(self, result: GuardrailResult) -> Optional[str]:
+        if not self._schema_validator:
+            return None
+        payload = {
+            "answer": result.answer,
+            "citations": [
+                {"doc_id": citation.doc_id, "chunk_id": citation.chunk_id}
+                for citation in result.citations
+            ],
+            "toxicity": result.toxicity,
+        }
+        try:
+            self._schema_validator.validate(payload)
+            return None
+        except ValidationError as exc:
+            LOGGER.debug("Structured schema validation failed: %s", exc)
+            return "schema_validation_failed"
 
 
 def extract_citations(text: str) -> List[Citation]:
