@@ -1,5 +1,5 @@
 {
-  "ragas_answer_relevancy_mean": 0.20,
+  "ragas_answer_relevancy_mean": 0.12,
   "ragas_faithfulness_mean": 0.07,
   "ragas_context_precision_mean": -0.01,
   "ragas_context_recall_mean": 0.07,
@@ -12,7 +12,7 @@
   "telemetry_avg_latency_ms": 2000.0,
   "telemetry_request_count": 100.0,
   "faithfulness_mean": 0.07,
-  "answer_relevancy_mean": 0.20,
+  "answer_relevancy_mean": 0.12,
   "context_precision_mean": -0.01,
   "context_recall_mean": 0.07
 }
