@@ -46,26 +46,32 @@ class AzureOpenAIProvider(Provider):
         stop: Optional[Iterable[str]] = None,
     ) -> ProviderCallDetails:
         try:
-            if not hasattr(self._client, "responses"):
-                raise ProviderError("Responses interface unavailable for Azure OpenAI client")
-            responses = self._client.responses
-            create = cast(Callable[..., Any], responses.create)
-            response: Any = create(
-                model=self._deployment,
-                input=prompt,
-                system=system or "",
-                temperature=self.temperature,
-                max_output_tokens=self.config.max_tokens,
-                stop=stop,
-            )
-            output_text = cast(str, getattr(response, "output_text", ""))
-            prompt_tokens, completion_tokens = _extract_usage(response)
-            return ProviderCallDetails(
-                text=output_text,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                metadata={"request_id": getattr(response, "id", None)},
-            )
+            if hasattr(self._client, "chat") and hasattr(self._client.chat, "completions"):
+                chat_client = self._client.chat
+                create_chat = cast(Callable[..., Any], chat_client.completions.create)
+                chat_response: Any = create_chat(
+                    model=self._deployment,
+                    messages=[
+                        {"role": "system", "content": system or "You are a helpful assistant."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=self.temperature,
+                    max_tokens=self.config.max_tokens,
+                    stop=stop,
+                )
+                message = chat_response.choices[0].message
+                if isinstance(message, dict):
+                    output_text = cast(str, message.get("content", ""))
+                else:
+                    output_text = cast(str, getattr(message, "content", ""))
+                prompt_tokens, completion_tokens = _extract_usage(chat_response)
+                return ProviderCallDetails(
+                    text=output_text,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    metadata={"request_id": getattr(chat_response, "id", None)},
+                )
+            raise ProviderError("Azure OpenAI client missing chat completions interface")
         except Exception as exc:  # pragma: no cover - network
             raise ProviderError(f"Azure OpenAI generate failed: {exc}") from exc
 
