@@ -19,7 +19,7 @@ _ToxicityPipeline = Callable[[str], Sequence[Mapping[str, Any]]]
 try:  # pragma: no cover - optional dependency
     from jsonschema import Draft7Validator, ValidationError
 except Exception:  # pragma: no cover - optional dependency
-    Draft7Validator = None  # type: ignore[misc]
+    Draft7Validator = None  # type: ignore[assignment]
     ValidationError = Exception
 
 
