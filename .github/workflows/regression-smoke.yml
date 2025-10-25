@@ -1,0 +1,47 @@
+name: Regression Smoke
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      TELEMETRY_ENABLED: "0"
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: "gpt-4o"
+      CHROMA_API_KEY: ${{ secrets.CHROMA_API_KEY }}
+      CHROMA_TENANT: ${{ secrets.CHROMA_TENANT }}
+      CHROMA_DATABASE: ${{ secrets.CHROMA_DATABASE }}
+      CHROMA_COLLECTION: "ci-demo"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Populate vector store
+        run: python -m evalguard.cli ingest --collection demo
+
+      - name: Run smoke evaluation (OpenAI + Azure + Anthropic)
+        run: >
+          python -m evalguard.cli run
+          --suite demo
+          --models "openai:gpt-4o-mini azure-openai:gpt-4o anthropic:claude-3-haiku-20240307"
+          --out reports/ci_smoke
+
+      - name: Regression gate
+        run: python -m evalguard.cli regress --current reports/ci_smoke/aggregate.json --baseline reports/baseline_metrics.json
